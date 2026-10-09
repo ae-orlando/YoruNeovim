@@ -9,7 +9,11 @@ return {
                 "pylint",
                 "shellcheck",
                 "shfmt",
-                -- re-add after nodejs/npm exists: "prettier", "eslint_d", "markdownlint"
+                "prettier",
+                "eslint_d",
+                "markdownlint",
+                "vtsls",
+                "eslint-lsp",
             },
         },
     },
