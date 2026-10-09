@@ -1,4 +1,4 @@
--- Fullstack formatting + linting, LazyVim opts-style (no custom `config`, see lazyvim/plugins/formatting.lua)
+-- Yoru fullstack formatting + linting, LazyVim opts-style (no custom `config`, see lazyvim/plugins/formatting.lua)
 return {
     {
         "stevearc/conform.nvim",

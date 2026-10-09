@@ -1,6 +1,7 @@
 # Yoru Neovim
 
-Personal Neovim config built on [LazyVim](https://github.com/LazyVim/LazyVim), managed with `lazy.nvim`.
+Yoru is a personal LazyVim-based Neovim distro, managed with `lazy.nvim` (plugin manager, not forked).
+Built on [LazyVim](https://github.com/LazyVim/LazyVim).
 Wallpaper-adaptive colors via `matugen`, transparent editor for Kitty blur, fullstack (TS/Python/Tailwind/Docker) extras.
 
 ## Requirements
@@ -45,7 +46,6 @@ lua/plugins/
   markdown.lua            # render-markdown.nvim
   visuals.lua             # nvim-colorizer.lua
   bg.lua                  # typicode/bg.nvim (disabled)
-  example.lua             # disabled template (returns {})
 lazyvim.json              # enabled LazyVim extras
 ```
 
@@ -156,7 +156,6 @@ Adapters: `neotest-python` (`justMyCode=false`), `neotest-plenary`, `neotest-vit
 
 - `markdown.lua`: `render-markdown.nvim` for `markdown, quarto` (+ treesitter dep).
 - `visuals.lua`: `norcalli/nvim-colorizer.lua` on `BufReadPost` (`*`, `css={css=true}`, `html={mode="foreground"}`), with `vim.tbl_flatten` compat shim.
-- `example.lua`: template file, early `return {}` — loads nothing.
 
 ## Customizing
 
