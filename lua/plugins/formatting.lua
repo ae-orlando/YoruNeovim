@@ -11,6 +11,8 @@ return {
                 typescriptreact = { "prettier" },
                 javascriptreact = { "prettier" },
                 json = { "prettier" },
+                jsonc = { "prettier" },
+                json5 = { "prettier" },
                 html = { "prettier" },
                 css = { "prettier" },
                 markdown = { "prettier" },
