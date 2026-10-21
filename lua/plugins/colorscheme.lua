@@ -3,20 +3,28 @@
 -- Fallback when missing: catppuccin mocha (see colorscheme.lua)
 -- daedlock/matugen.nvim runs `:hi clear` after setting g:colors_name,
 -- which wipes it (breaks lualine auto-theme). Restore it post-load.
+local theme_group = vim.api.nvim_create_augroup("YoruColorscheme", { clear = true })
+local transparent_groups = { "Normal", "NormalNC", "SignColumn", "FoldColumn", "EndOfBuffer", "MsgArea" }
+
+local function clear_editor_backgrounds()
+    -- Neovim leaves the editor transparent; Kitty owns opacity and Hyprland owns blur.
+    -- Floats/pickers/sidebars keep their existing backgrounds.
+    for _, name in ipairs(transparent_groups) do
+        local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
+        if ok and hl then
+            hl.bg = nil
+            hl.ctermbg = nil
+            pcall(vim.api.nvim_set_hl, 0, name, hl)
+        end
+    end
+end
+
 vim.api.nvim_create_autocmd("ColorScheme", {
+    group = theme_group,
     pattern = "matugen",
     callback = function()
         vim.g.colors_name = "matugen"
-        -- matugen.nvim has no transparent option: clear editor bg so Kitty blur shows through.
-        -- Floats/pickers/sidebars keep their bg for readability.
-        for _, g in ipairs({ "Normal", "NormalNC", "SignColumn", "FoldColumn", "EndOfBuffer", "MsgArea" }) do
-            local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = g, link = false })
-            if ok and hl then
-                hl.bg = nil
-                hl.ctermbg = nil
-                pcall(vim.api.nvim_set_hl, 0, g, hl)
-            end
-        end
+        clear_editor_backgrounds()
     end,
 })
 
@@ -87,27 +95,31 @@ end
 
 -- keep lualine + tabline in sync on wallpaper-driven reloads
 vim.api.nvim_create_autocmd("User", {
+    group = theme_group,
     pattern = "MatugenReloaded",
     callback = function()
+        -- Watcher reloads bypass :colorscheme, so no ColorScheme event restores the name.
+        vim.g.colors_name = "matugen"
+        clear_editor_backgrounds()
         if package.loaded["lualine"] then
             local theme = lualine_theme()
             if theme then
-                pcall(require("lualine").setup, { options = { theme = theme } })
+                local lualine = require("lualine")
+                local opts = lualine.get_config()
+                opts.options.theme = theme
+                pcall(lualine.setup, opts)
             end
         end
         if package.loaded["bufferline"] then
             local hl = bufferline_highlights()
-            if hl then
-                pcall(require("bufferline").setup, { highlights = hl })
-            end
-        end
-        -- watcher path bypasses :colorscheme, so re-clear here too
-        for _, g in ipairs({ "Normal", "NormalNC", "SignColumn", "FoldColumn", "EndOfBuffer", "MsgArea" }) do
-            local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = g, link = false })
-            if ok and hl then
-                hl.bg = nil
-                hl.ctermbg = nil
-                pcall(vim.api.nvim_set_hl, 0, g, hl)
+            local config = require("bufferline.config")
+            local current = config.get()
+            if hl and current and current.user then
+                current.user.highlights = vim.tbl_deep_extend("force", current.user.highlights or {}, hl)
+                -- Use Bufferline's ColorScheme refresh path: setup() also adds session hooks.
+                local highlights = require("bufferline.highlights")
+                highlights.reset_icon_hl_cache()
+                highlights.set_all(config.update_highlights())
             end
         end
     end,
@@ -164,7 +176,7 @@ return {
         opts = function(_, opts)
             local hl = bufferline_highlights()
             if hl then
-                opts.highlights = hl
+                opts.highlights = vim.tbl_deep_extend("force", opts.highlights or {}, hl)
                 opts.options.separator_style = "slant"
                 opts.options.indicator = { style = "underline" }
             end

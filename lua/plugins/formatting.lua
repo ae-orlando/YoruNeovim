@@ -1,4 +1,4 @@
--- Yoru fullstack formatting + linting, LazyVim opts-style (no custom `config`, see lazyvim/plugins/formatting.lua)
+-- Yoru formatting + linting, LazyVim opts-style (no custom `config`, see lazyvim/plugins/formatting.lua)
 return {
     {
         "stevearc/conform.nvim",
@@ -19,10 +19,10 @@ return {
                 yaml = { "prettier" },
                 sh = { "shfmt" },
             },
-            -- Single source of truth for indent: your options.lua
-            -- (tabstop=4, shiftwidth=4, softtabstop=4, expandtab=true).
-            -- CLI args here override any missing/conflicting project config,
-            -- so formatters ALWAYS emit 4 spaces even with no local rc file.
+            -- Keep Prettier/Shfmt aligned with options.lua's four-space defaults.
+            -- Explicit CLI arguments override conflicting project indentation.
+            -- StyLua follows the target project's config; Black uses four spaces.
+            -- Editor options alone do not configure external formatters globally.
             formatters = {
                 prettier = {
                     -- --tab-width 4  -> matches shiftwidth=4
@@ -38,8 +38,8 @@ return {
                     -- keep isort output compatible with black (which always uses 4 spaces)
                     prepend_args = { "--profile", "black" },
                 },
-                -- stylua needs no args: stylua.toml already has
-                -- indent_type="Spaces", indent_width=4.
+                -- stylua follows the target project's config; this repository's
+                -- stylua.toml sets indent_type="Spaces", indent_width=4.
                 -- black needs no args: black always emits 4 spaces.
             },
         },
@@ -57,8 +57,8 @@ return {
     {
         "mfussenegger/nvim-lint",
         opts = {
-            -- only linters with installable binaries for now;
-            -- re-add eslint_d/markdownlint after nodejs/npm exists
+            -- Tool installation is declared in mason.lua.
+            -- These mappings opt Python and JS/TS into nvim-lint.
             linters_by_ft = {
                 python = { "pylint" },
                 javascript = { "eslint_d" },
