@@ -2,6 +2,14 @@ local cursorline_group = vim.api.nvim_create_augroup("YoruCursorLineNr", { clear
 local function style_cursorline_nr()
     vim.api.nvim_set_hl(0, "CursorLine", { bg = "NONE" })
     local accent = vim.api.nvim_get_hl(0, { name = "Function", link = false })
+    -- Syntax foregrounds are enhanced separately; keep the original UI tint.
+    local matugen = vim.g.colors_name == "matugen" and package.loaded["matugen"]
+    if type(matugen) == "table" and matugen.get_palette then
+        local palette = matugen.get_palette()
+        if palette and palette.fn then
+            accent.fg = palette.fn
+        end
+    end
     vim.api.nvim_set_hl(0, "CursorLineNr", {
         fg = accent.fg,
         bold = true,

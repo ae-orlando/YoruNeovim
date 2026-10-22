@@ -25,6 +25,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
         vim.g.colors_name = "matugen"
         clear_editor_backgrounds()
+        require("config.syntax").apply()
     end,
 })
 
@@ -101,6 +102,7 @@ vim.api.nvim_create_autocmd("User", {
         -- Watcher reloads bypass :colorscheme, so no ColorScheme event restores the name.
         vim.g.colors_name = "matugen"
         clear_editor_backgrounds()
+        require("config.syntax").apply()
         if package.loaded["lualine"] then
             local theme = lualine_theme()
             if theme then

@@ -112,7 +112,7 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 ### Native interface and editing defaults
 
 - Keep native `:`, `/`, and `?` at the bottom. Noice handles notifications, not command lines, messages, or LSP hover/signature windows (`lua/plugins/noice.lua:5`).
-- Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:11`, `lua/config/autocmds.lua:20`).
+- Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:11`, `lua/config/autocmds.lua:28`).
 - Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua follows the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:41`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
 
@@ -121,6 +121,8 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 If the palette file is readable at startup, Yoru uses `daedlock/matugen.nvim` with watching enabled. Otherwise it uses transparent Catppuccin Mocha. Palette settings live in `lua/plugins/colorscheme.lua`.
 
 `Normal`, `NormalNC`, `SignColumn`, `FoldColumn`, `EndOfBuffer`, and `MsgArea` remain transparent. Floats and panels retain their existing theme backgrounds. Palette reloads refresh lualine and Bufferline colors while preserving their configuration.
+
+Matugen syntax receives bounded, wallpaper-adaptive color-intensity boosts for functions, types, strings, numbers, constants, and properties. Methods share the function tint; keywords, plain variables, comments, and punctuation keep their theme colors. Tune the gains and caps in `lua/config/syntax.lua:6`. The layer preserves existing text styles and LSP highlight links, reapplies on palette reloads, and leaves the shared palette and Catppuccin fallback untouched. The cursor-line number retains its original UI tint (`lua/config/autocmds.lua:5`).
 
 **Do not add editor backgrounds to compensate for wallpaper readability.** Adjust opacity in Kitty and blur in Hyprland; neither is configured by this repository.
 
@@ -175,13 +177,13 @@ YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
     nvim --headless -u NONE -i NONE -n -l tests/run.lua
 ```
 
-For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the fullstack extras and tooling wiring.
+For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, syntax-only foreground changes across dark/light palettes, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the fullstack extras and tooling wiring.
 
 ## Project Structure
 
 ```text
 init.lua           # bootstrap
-lua/config/        # LazyVim setup, options, highlight autocmds
+lua/config/        # LazyVim setup, options, syntax colors, highlight autocmds
 lua/plugins/       # Yoru overrides and workflow mappings
 assets/            # screenshots
 tests/run.lua      # isolated regression and opt-in integration checks

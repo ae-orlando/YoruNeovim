@@ -1,5 +1,6 @@
 -- Run from any directory: nvim --headless -u NONE -i NONE -n -l /path/to/tests/run.lua
 local root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p:h:h")
+vim.opt.rtp:prepend(root)
 local passed, failed = 0, 0
 local cleanups = {}
 
@@ -72,6 +73,107 @@ local function mock_matugen()
         end,
     })
     return state
+end
+
+local syntax_groups = {
+    fn = { "Function", "@function", "@function.call", "@function.method", "@function.method.call" },
+    builtin = { "@function.builtin" },
+    type = { "Type", "Structure", "Typedef", "@type", "@type.builtin", "@type.definition", "@constructor" },
+    const = { "Constant", "Boolean", "@constant", "@constant.builtin", "@constant.macro", "@boolean" },
+    str = { "String", "Character", "@string", "@character" },
+    num = { "Number", "Float", "@number", "@number.float" },
+    prop = { "@property", "@variable.member", "@tag.attribute" },
+}
+
+local syntax_links = {
+    ["@lsp.type.class"] = "@type",
+    ["@lsp.type.enum"] = "@type",
+    ["@lsp.type.enumMember"] = "@constant",
+    ["@lsp.type.function"] = "@function",
+    ["@lsp.type.interface"] = "@type",
+    ["@lsp.type.method"] = "@function.method",
+    ["@lsp.type.property"] = "@property",
+    ["@lsp.type.struct"] = "@type",
+    ["@lsp.type.type"] = "@type",
+    ["@lsp.type.typeParameter"] = "@type",
+}
+
+local protected_highlights = {
+    "Normal",
+    "NormalNC",
+    "NormalFloat",
+    "FloatBorder",
+    "CursorLine",
+    "CursorLineNr",
+    "WinSeparator",
+    "StatusLine",
+    "TabLine",
+    "Pmenu",
+    "PmenuSel",
+    "SnacksPicker",
+    "NeoTreeNormal",
+    "DiagnosticError",
+    "DiagnosticWarn",
+    "DiagnosticInfo",
+    "DiagnosticHint",
+    "Keyword",
+    "@keyword",
+    "@variable",
+    "@variable.builtin",
+    "@variable.parameter",
+    "Comment",
+    "@comment",
+    "@punctuation.bracket",
+    "@markup.heading.2",
+    "@tag",
+}
+
+local function mock_syntax()
+    local state = mock_matugen()
+    state.inputs, state.colors, state.requests = {}, {}, {}
+    local sources, hues = {}, {}
+    for i, role in ipairs({ "fn", "builtin", "type", "const", "str", "num", "prop" }) do
+        local source = string.format("#%02x2233", i * 16)
+        state.palette[role] = source
+        state.inputs[role] = { L = 0.8, C = 0.03, h = i * 30 }
+        state.colors[role] = string.format("#%02x4455", i * 16)
+        sources[source], hues[i * 30] = role, role
+    end
+    state.palette.method = state.palette.prop
+    package.loaded.matugen.color = function()
+        return {
+            hex_to_oklch = function(hex)
+                return vim.deepcopy(state.inputs[sources[hex]])
+            end,
+            oklch = function(L, C, h)
+                local role = hues[h]
+                state.requests[role] = { L = L, C = C, h = h }
+                return state.colors[role]
+            end,
+        }
+    end
+    return state
+end
+
+local function seed_syntax(pal)
+    local original = {}
+    for role, names in pairs(syntax_groups) do
+        for _, name in ipairs(names) do
+            local fg = name:find("@function.method", 1, true) and pal.method or pal[role]
+            vim.api.nvim_set_hl(0, name, {
+                fg = fg,
+                bg = "#112233",
+                sp = "#778899",
+                bold = true,
+                italic = true,
+                underline = true,
+                ctermfg = 12,
+                ctermbg = 4,
+            })
+            original[name] = vim.api.nvim_get_hl(0, { name = name, link = false })
+        end
+    end
+    return original
 end
 
 local function reload()
@@ -226,6 +328,137 @@ test("missing palette keeps the transparent Catppuccin fallback", function()
     eq("catppuccin", opts.colorscheme)
     eq(false, find(entries, "daedlock/matugen.nvim").cond)
     eq(true, find(entries, "catppuccin/nvim").opts.transparent_background)
+end)
+
+test("syntax changes only selected foregrounds and preserves semantic links", function()
+    local state = mock_syntax()
+    replace(vim.g, "colors_name", "matugen")
+    local pal = vim.deepcopy(state.palette)
+    local original = seed_syntax(state.palette)
+    -- Resolve a linked capture's existing styles before changing its foreground.
+    vim.api.nvim_set_hl(0, "@function.call", { link = "Function" })
+    for name, target in pairs(syntax_links) do
+        vim.api.nvim_set_hl(0, name, { link = target })
+    end
+    local protected = {}
+    for _, name in ipairs(protected_highlights) do
+        vim.api.nvim_set_hl(0, name, { fg = "#abcdef", bg = "#123456", italic = true })
+        protected[name] = vim.api.nvim_get_hl(0, { name = name, link = false })
+    end
+
+    require("config.syntax").apply()
+    eq(pal, state.palette)
+    for role, names in pairs(syntax_groups) do
+        for _, name in ipairs(names) do
+            local expected = vim.deepcopy(original[name])
+            expected.fg = tonumber(state.colors[role]:sub(2), 16)
+            eq(expected, vim.api.nvim_get_hl(0, { name = name, link = false }))
+        end
+    end
+    for name, expected in pairs(protected) do
+        eq(expected, vim.api.nvim_get_hl(0, { name = name, link = false }))
+    end
+    for name, target in pairs(syntax_links) do
+        eq({ link = target }, vim.api.nvim_get_hl(0, { name = name }))
+        eq(
+            vim.api.nvim_get_hl(0, { name = target, link = false }).fg,
+            vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+        )
+    end
+end)
+
+test("syntax chroma boosts are bounded without changing hue or lightness", function()
+    local state = mock_syntax()
+    replace(vim.g, "colors_name", "matugen")
+    state.inputs.fn.C = 0.05 -- The function boost must stop at its cap.
+    state.inputs.type.C = 0.12 -- Do not desaturate stronger user overrides.
+    state.inputs.str.C = 0 -- A neutral palette stays neutral.
+    seed_syntax(state.palette)
+    require("config.syntax").apply()
+    eq(0.075, state.requests.fn.C)
+    eq(nil, state.requests.type) -- No round trip for colors that should stay unchanged.
+    eq(nil, state.requests.str)
+    eq(tonumber(state.palette.type:sub(2), 16), vim.api.nvim_get_hl(0, { name = "Type" }).fg)
+    eq(tonumber(state.palette.str:sub(2), 16), vim.api.nvim_get_hl(0, { name = "String" }).fg)
+    assert(math.abs(state.requests.num.C - 0.0495) < 1e-10)
+    assert(math.abs(state.requests.prop.C - 0.036) < 1e-10)
+    for role, input in pairs(state.inputs) do
+        if state.requests[role] then
+            eq(input.L, state.requests[role].L)
+            eq(input.h, state.requests[role].h)
+        end
+    end
+end)
+
+test("syntax follows the live palette on initial load and repeat reloads", function()
+    local state = mock_syntax()
+    replace(vim.g, "colors_name", nil)
+    specs("colorscheme")
+    seed_syntax(state.palette)
+    vim.api.nvim_exec_autocmds("ColorScheme", { pattern = "matugen", modeline = false })
+    eq(tonumber(state.colors.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "Function" }).fg)
+
+    state.palette.fn = state.palette.type -- Simulate a new wallpaper's function tint.
+    local pal = vim.deepcopy(state.palette)
+    for _ = 1, 3 do
+        vim.cmd("highlight clear")
+        seed_syntax(state.palette)
+        vim.g.colors_name = nil
+        vim.api.nvim_exec_autocmds("User", { pattern = "MatugenReloaded", modeline = false })
+        eq("matugen", vim.g.colors_name)
+        eq(tonumber(state.colors.type:sub(2), 16), vim.api.nvim_get_hl(0, { name = "Function" }).fg)
+        eq(tonumber(state.colors.type:sub(2), 16), vim.api.nvim_get_hl(0, { name = "@function.method" }).fg)
+        eq(tonumber(state.colors.prop:sub(2), 16), vim.api.nvim_get_hl(0, { name = "@property" }).fg)
+        local highlights = vim.api.nvim_get_hl(0, {})
+        require("config.syntax").apply()
+        eq(highlights, vim.api.nvim_get_hl(0, {}))
+        eq(pal, state.palette)
+    end
+end)
+
+test("syntax leaves fallback and unavailable Matugen state untouched", function()
+    local syntax = require("config.syntax")
+    replace(vim.g, "colors_name", "catppuccin")
+    replace(package.loaded, "matugen", nil)
+    replace(package.preload, "matugen", function()
+        error("syntax must not force-load Matugen")
+    end)
+    local original = vim.api.nvim_get_hl(0, {})
+    syntax.apply()
+    eq(original, vim.api.nvim_get_hl(0, {}))
+    vim.g.colors_name = "matugen"
+    syntax.apply()
+    eq(original, vim.api.nvim_get_hl(0, {}))
+    replace(package.loaded, "matugen", {
+        get_palette = function() end,
+        color = function()
+            error("no color derivation without a palette")
+        end,
+    })
+    syntax.apply()
+    eq(original, vim.api.nvim_get_hl(0, {}))
+end)
+
+test("cursor-line number retains its original tint independently of syntax", function()
+    local state = mock_syntax()
+    replace(vim.g, "colors_name", "matugen")
+    specs("colorscheme")
+    seed_syntax(state.palette)
+    require("config.syntax").apply()
+    dofile(root .. "/lua/config/autocmds.lua")
+    eq(tonumber(state.palette.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
+    eq(tonumber(state.colors.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "Function" }).fg)
+    eq(nil, vim.api.nvim_get_hl(0, { name = "CursorLine" }).bg)
+
+    state.palette.fn = state.palette.type
+    seed_syntax(state.palette)
+    vim.g.colors_name = nil
+    vim.api.nvim_exec_autocmds("User", { pattern = "MatugenReloaded", modeline = false })
+    eq(tonumber(state.palette.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
+    vim.g.colors_name = "catppuccin"
+    vim.api.nvim_set_hl(0, "Function", { fg = "#fedcba" })
+    vim.api.nvim_exec_autocmds("ColorScheme", { pattern = "catppuccin", modeline = false })
+    eq(0xfedcba, vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
 end)
 
 test("TODO settings inherit picker mappings rather than requiring Telescope", function()
@@ -404,6 +637,7 @@ if plugin_root then
         local lock = vim.json.decode(table.concat(vim.fn.readfile(root .. "/lazy-lock.json"), "\n"))
         for _, name in ipairs({
             "matugen.nvim",
+            "catppuccin",
             "lualine.nvim",
             "bufferline.nvim",
             "persistence.nvim",
@@ -488,8 +722,115 @@ if plugin_root then
             eq(nil, vim.api.nvim_get_hl(0, { name = "Normal" }).bg)
             assert(vim.api.nvim_get_hl(0, { name = "NormalFloat" }).bg ~= nil)
             eq(true, vim.api.nvim_get_hl(0, { name = "Comment" }).bold)
+            eq(tonumber(pal.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
+            eq(
+                vim.api.nvim_get_hl(0, { name = "Function" }).fg,
+                vim.api.nvim_get_hl(0, { name = "@function.method" }).fg
+            )
             eq(hooks, #vim.api.nvim_get_autocmds({ event = "SessionLoadPost" }))
         end
+    end)
+
+    test("real syntax preserves palette, UI and styles across dark and light palettes", function()
+        local entries = specs("colorscheme")
+        local matugen = require("matugen")
+        matugen._config = vim.tbl_deep_extend("force", matugen._config, entries[1].opts, { watch = false })
+        local palettes = require("matugen.palette")
+        local fixtures = {
+            vim.deepcopy(palettes.BASELINE_MC),
+            { surface = "#0f1512", primary = "#8ad6b7", secondary = "#b3ccbf", tertiary = "#a6cce0" },
+            { surface = "#111318", primary = "#8ab4f8", secondary = "#a5c9d5", tertiary = "#dab6e8" },
+            { surface = "#f7f2fa", primary = "#6750a4", secondary = "#625b71", tertiary = "#7d5260" },
+        }
+        local current = palettes.read_colors(entries[1].opts.colors_path)
+        if current then
+            fixtures[#fixtures + 1] = current
+        end
+        local tokens
+        replace(palettes, "read_colors", function()
+            return vim.deepcopy(tokens)
+        end)
+        local syntax = require("config.syntax")
+        local apply = syntax.apply
+        -- Capture the unmodified theme on each load, then apply the real layer.
+        replace(syntax, "apply", function() end)
+        dofile(root .. "/lua/config/autocmds.lua")
+        local allowed = {}
+        for _, names in pairs(syntax_groups) do
+            for _, name in ipairs(names) do
+                allowed[name] = true
+            end
+        end
+        local color = matugen.color()
+        for _, fixture in ipairs(fixtures) do
+            tokens = fixture
+            matugen.load()
+            local pal = vim.deepcopy(matugen.get_palette())
+            local raw = vim.api.nvim_get_hl(0, {})
+            local styles, protected = {}, {}
+            for name in pairs(allowed) do
+                styles[name] = vim.api.nvim_get_hl(0, { name = name, link = false, create = false })
+            end
+            for _, name in ipairs(protected_highlights) do
+                protected[name] = vim.api.nvim_get_hl(0, { name = name, link = false, create = false })
+            end
+            apply()
+            local enhanced = vim.api.nvim_get_hl(0, {})
+            eq(pal, matugen.get_palette())
+            for name, hl in pairs(raw) do
+                if not allowed[name] then
+                    eq(hl, enhanced[name])
+                end
+            end
+            for name in pairs(enhanced) do
+                assert(raw[name], "syntax created an unrelated highlight: " .. name)
+            end
+            for name, hl in pairs(protected) do
+                eq(hl, vim.api.nvim_get_hl(0, { name = name, link = false, create = false }))
+            end
+            for role, names in pairs(syntax_groups) do
+                local source = color.hex_to_oklch(pal[role])
+                for _, name in ipairs(names) do
+                    local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+                    local expected = vim.deepcopy(styles[name])
+                    expected.fg = hl.fg
+                    eq(expected, hl) -- No bold/italic/background changes.
+                    local result = color.hex_to_oklch(string.format("#%06x", hl.fg))
+                    assert(math.abs(source.L - result.L) < 0.005, "syntax changed lightness: " .. name)
+                    assert(result.C >= source.C - 0.003, "syntax reduced chroma: " .. name)
+                    if source.C > 0.01 then
+                        -- Matugen's conversion and 8-bit rounding have a small
+                        -- hue drift; keep it within the original color family.
+                        assert(color.hue_distance(source.h, result.h) < 6, "syntax changed hue: " .. name)
+                    end
+                end
+            end
+            for name, target in pairs(syntax_links) do
+                eq({ link = target }, vim.api.nvim_get_hl(0, { name = name }))
+                eq(
+                    vim.api.nvim_get_hl(0, { name = target, link = false }).fg,
+                    vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+                )
+            end
+            eq(tonumber(pal.fn:sub(2), 16), vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
+            apply()
+            eq(enhanced, vim.api.nvim_get_hl(0, {}))
+        end
+    end)
+
+    test("real Catppuccin fallback is unchanged after Matugen syntax overrides", function()
+        local entries = specs("colorscheme")
+        local catppuccin = require("catppuccin")
+        catppuccin.setup(find(entries, "catppuccin/nvim").opts)
+        dofile(root .. "/lua/config/autocmds.lua")
+        vim.cmd.colorscheme("catppuccin")
+        local original = vim.api.nvim_get_hl(0, {})
+        require("config.syntax").apply()
+        eq(original, vim.api.nvim_get_hl(0, {}))
+        eq("catppuccin-mocha", vim.g.colors_name)
+        eq(nil, vim.api.nvim_get_hl(0, { name = "Normal" }).bg)
+        eq(vim.api.nvim_get_hl(0, { name = "Function" }).fg, vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
+        eq(true, vim.api.nvim_get_hl(0, { name = "Comment" }).bold)
     end)
 
     test("real Persistence stops automatic saving without touching session files", function()
