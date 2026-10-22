@@ -320,6 +320,82 @@ test("palette parameters and existing workflow policies stay unchanged", functio
     eq({ "--tab-width", "4", "--use-tabs", "false" }, specs("formatting")[1].opts.formatters.prettier.prepend_args)
 end)
 
+test("fullstack language tooling is declared", function()
+    local lazyvim = vim.json.decode(table.concat(vim.fn.readfile(root .. "/lazyvim.json"), "\n"))
+    local required_extras = {
+        "lazyvim.plugins.extras.dap.core",
+        "lazyvim.plugins.extras.lang.docker",
+        "lazyvim.plugins.extras.lang.json",
+        "lazyvim.plugins.extras.lang.python",
+        "lazyvim.plugins.extras.lang.sql",
+        "lazyvim.plugins.extras.lang.tailwind",
+        "lazyvim.plugins.extras.lang.typescript",
+        "lazyvim.plugins.extras.lang.yaml",
+        "lazyvim.plugins.extras.linting.eslint",
+        "lazyvim.plugins.extras.test.core",
+    }
+    local seen = {}
+    for _, extra in ipairs(lazyvim.extras) do
+        assert(not seen[extra], "duplicate extra: " .. extra)
+        seen[extra] = true
+    end
+    for _, extra in ipairs(required_extras) do
+        assert(seen[extra], "missing lazyvim.json extra: " .. extra)
+    end
+
+    local mason = find(specs("mason"), "mason-org/mason.nvim").opts.ensure_installed
+    for _, tool in ipairs({ "debugpy", "eslint-lsp", "markdownlint", "pylint", "shellcheck" }) do
+        assert(vim.tbl_contains(mason, tool), "missing mason tool: " .. tool)
+    end
+    assert(not vim.tbl_contains(mason, "eslint_d"), "eslint_d must be replaced by ESLint LSP")
+
+    local mdlint = vim.fn.readfile(root .. "/.markdownlint.yaml")
+    assert(
+        table.concat(mdlint, "\n"):find("MD013: false", 1, true) ~= nil,
+        "editor markdownlint must disable MD013 like the documented check"
+    )
+
+    local lint = specs("formatting")[2]
+    eq("mfussenegger/nvim-lint", lint[1])
+    local by_ft = lint.opts.linters_by_ft
+    eq({ "pylint" }, by_ft.python)
+    eq({ "shellcheck" }, by_ft.sh)
+    eq({ "markdownlint" }, by_ft.markdown)
+    for _, linters in pairs(by_ft) do
+        assert(not vim.tbl_contains(linters, "eslint_d"), "eslint_d still wired into nvim-lint")
+    end
+
+    local lsp = specs("lsp")[1].opts.servers
+    eq({}, lsp.html)
+    eq({}, lsp.cssls)
+    eq(false, lsp.ruff.enabled)
+    eq(4, lsp.vtsls.settings.typescript.format.indentSize)
+
+    local neotest = specs("test")[1]
+    eq(nil, neotest.config, "test setup must extend LazyVim's test.core extra")
+    eq("table", type(neotest.opts.adapters["neotest-python"]))
+    eq(false, neotest.opts.adapters["neotest-python"].dap.justMyCode)
+    assert(neotest.opts.adapters["neotest-vitest"] ~= nil)
+    assert(neotest.opts.adapters["neotest-plenary"] ~= nil)
+end)
+
+test("SQLfluff respects project dialect and falls back to ANSI", function()
+    local override = specs("formatting")[3]
+    eq("stevearc/conform.nvim", override[1])
+    local opts = { formatters = {} }
+    override.opts({}, opts)
+    local args = opts.formatters.sqlfluff.args
+    eq("function", type(args))
+    replace(vim.fs, "find", function()
+        return { "/tmp/proj/.sqlfluff" }
+    end)
+    eq({ "format", "-" }, args(nil, { filename = "/tmp/proj/query.sql" }))
+    replace(vim.fs, "find", function()
+        return {}
+    end)
+    eq({ "format", "--dialect=ansi", "-" }, args(nil, { filename = "/tmp/proj/query.sql" }))
+end)
+
 -- Opt in to integration checks against an existing installation. No installs,
 -- network requests, real palette changes, or session-file writes are performed.
 local plugin_root = vim.env.YORU_TEST_PLUGIN_DIR
@@ -340,6 +416,19 @@ if plugin_root then
             assert(result.code == 0, "missing integration dependency: " .. dir)
             eq(lock[name].commit, vim.trim(result.stdout))
             vim.opt.rtp:prepend(dir)
+        end
+    end)
+
+    test("integration LazyVim ships every declared extra", function()
+        local lazyvim = vim.json.decode(table.concat(vim.fn.readfile(root .. "/lazyvim.json"), "\n"))
+        for _, extra in ipairs(lazyvim.extras) do
+            local rel = extra:gsub("%.", "/")
+            local file = plugin_root .. "/LazyVim/lua/" .. rel .. ".lua"
+            local init = plugin_root .. "/LazyVim/lua/" .. rel .. "/init.lua"
+            assert(
+                vim.fn.filereadable(file) == 1 or vim.fn.filereadable(init) == 1,
+                "extra module missing from LazyVim: " .. extra
+            )
         end
     end)
 

@@ -57,14 +57,13 @@ return {
     {
         "mfussenegger/nvim-lint",
         opts = {
-            -- Tool installation is declared in mason.lua.
-            -- These mappings opt Python and JS/TS into nvim-lint.
+            -- Tool installation is declared in mason.lua plus LazyVim extras.
+            -- JS/TS diagnostics come from ESLint LSP (extras.linting.eslint);
+            -- eslint_d was removed so diagnostics are not reported twice.
             linters_by_ft = {
                 python = { "pylint" },
-                javascript = { "eslint_d" },
-                typescript = { "eslint_d" },
-                javascriptreact = { "eslint_d" },
-                typescriptreact = { "eslint_d" },
+                sh = { "shellcheck" },
+                markdown = { "markdownlint" },
             },
         },
         keys = {
@@ -76,5 +75,25 @@ return {
                 desc = "Lint file",
             },
         },
+    },
+    -- SQL: respect the project's .sqlfluff dialect. The upstream lang.sql
+    -- extra hardcodes --dialect=ansi, which overrides project config; fall
+    -- back to ANSI only for scratch files without a .sqlfluff file.
+    {
+        "stevearc/conform.nvim",
+        optional = true,
+        opts = function(_, opts)
+            opts.formatters = opts.formatters or {}
+            opts.formatters.sqlfluff = {
+                args = function(_, ctx)
+                    local path = ctx and ctx.filename
+                    if not path or path == "" then
+                        path = vim.fn.getcwd()
+                    end
+                    local found = vim.fs.find({ ".sqlfluff" }, { path = path, upward = true })[1]
+                    return found and { "format", "-" } or { "format", "--dialect=ansi", "-" }
+                end,
+            }
+        end,
     },
 }

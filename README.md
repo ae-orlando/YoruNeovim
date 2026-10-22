@@ -69,7 +69,7 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 | Keys         | Action                                     | Source                           |
 | ------------ | ------------------------------------------ | -------------------------------- |
 | `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:48`  |
-| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:72`  |
+| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:71`  |
 | `<leader>pp` | Open the Snacks project picker             | `lua/plugins/project.lua:7`      |
 | `<leader>Ss` | Save the current project session           | `lua/plugins/session.lua:8`      |
 | `<leader>Sl` | Restore the current project/branch session | `lua/plugins/session.lua:15`     |
@@ -77,11 +77,11 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 | `<leader>mp` | Start browser preview                      | `lua/plugins/live-server.lua:16` |
 | `<leader>mx` | Stop browser preview                       | `lua/plugins/live-server.lua:17` |
 | `<leader>mf` | Pick a file to preview                     | `lua/plugins/live-server.lua:18` |
-| `<leader>tr` | Run the nearest test                       | `lua/plugins/test.lua:23`        |
-| `<leader>tf` | Run tests in the current file              | `lua/plugins/test.lua:26`        |
-| `<leader>ta` | Run tests from the working directory       | `lua/plugins/test.lua:29`        |
-| `<leader>ts` | Toggle the test summary                    | `lua/plugins/test.lua:32`        |
-| `<leader>to` | Open test output                           | `lua/plugins/test.lua:35`        |
+| `<leader>tr` | Run the nearest test                       | `lua/plugins/test.lua:26`        |
+| `<leader>tf` | Run tests in the current file              | `lua/plugins/test.lua:33`        |
+| `<leader>ta` | Run tests from the working directory       | `lua/plugins/test.lua:40`        |
+| `<leader>ts` | Toggle the test summary                    | `lua/plugins/test.lua:47`        |
+| `<leader>to` | Open test output                           | `lua/plugins/test.lua:54`        |
 
 TODO search (`<leader>st` / `<leader>sT`), TODO navigation, and Trouble mappings follow LazyVim and the selected picker. Telescope is not required.
 
@@ -89,18 +89,23 @@ Persistence automatically saves session layout and open-file information on exit
 
 Browser preview supports HTML, Markdown, AsciiDoc, and SVG on `127.0.0.1:5500` (`lua/plugins/live-server.lua:3`).
 
+Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:12`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`. `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:7`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
+
 ### Language tooling
 
-| Language                                 | Configured tooling                                                                               |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| JavaScript / TypeScript / JSX / TSX      | Vtsls through the TypeScript extra, Prettier, ESLint tooling, Vitest adapter                     |
-| Lua                                      | LazyVim's Lua language server, StyLua, Plenary test adapter                                      |
-| Python                                   | Isort followed by Black, Pylint, Python test adapter; no Python language-server extra is enabled |
-| HTML / CSS / JSON / JSONC / JSON5 / YAML | Prettier; HTML also supports browser preview                                                     |
-| Markdown                                 | Prettier, in-editor rendering, browser preview                                                   |
-| Shell                                    | Shfmt; ShellCheck is installed through Mason                                                     |
+| Language                            | Configured tooling                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics and fixes, Vitest adapter, Node/browser debugging          |
+| HTML / CSS / Tailwind               | html and cssls servers, Tailwind CSS server, Prettier                                              |
+| Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled |
+| JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation, Prettier                                            |
+| Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                  |
+| SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                              |
+| Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                       |
+| Shell                               | Shfmt formatting, ShellCheck diagnostics                                                           |
+| Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                        |
 
-Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:5`, and `lua/plugins/test.lua:6`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
+Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:9`, `lua/plugins/lsp.lua:12`, and `lua/plugins/test.lua:17`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
 
 ## Configuration
 
@@ -108,7 +113,7 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 
 - Keep native `:`, `/`, and `?` at the bottom. Noice handles notifications, not command lines, messages, or LSP hover/signature windows (`lua/plugins/noice.lua:5`).
 - Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:11`, `lua/config/autocmds.lua:20`).
-- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua follows the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:26`).
+- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua follows the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:41`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
 
 ### System theme and transparency
@@ -170,7 +175,7 @@ YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
     nvim --headless -u NONE -i NONE -n -l tests/run.lua
 ```
 
-For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, preserved UI options and hook counts, picker mappings, session-stop behavior, and Colorizer compatibility.
+For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the fullstack extras and tooling wiring.
 
 ## Project Structure
 

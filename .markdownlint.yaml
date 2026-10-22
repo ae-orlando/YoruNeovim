@@ -1,0 +1,4 @@
+# Markdownlint policy for this repository, mirroring the documented check:
+# markdownlint README.md --disable MD013
+# Long table rows, prose lines, and reference links stay unwrapped.
+MD013: false

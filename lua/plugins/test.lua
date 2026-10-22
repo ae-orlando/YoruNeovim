@@ -1,8 +1,10 @@
--- Fullstack tests: python + vitest (+plenary), gtest dropped
+-- Fullstack tests: vitest + pytest (+ plenary), driven by LazyVim's
+-- test.core extra (see lazyvim.json). The extra supplies core setup and
+-- base mappings; Yoru's keys below override its same-lhs bindings and the
+-- adapters merge with the extra's opts.
 return {
     {
         "nvim-neotest/neotest",
-        event = "VeryLazy",
         dependencies = {
             "nvim-neotest/nvim-nio",
             "nvim-lua/plenary.nvim",
@@ -12,29 +14,49 @@ return {
             "nvim-neotest/neotest-plenary",
             "marilari88/neotest-vitest",
         },
-        config = function()
-            require("neotest").setup({
-                adapters = {
-                    require("neotest-python")({ dap = { justMyCode = false } }),
-                    require("neotest-plenary"),
-                    require("neotest-vitest"),
-                },
-            })
-            vim.keymap.set("n", "<leader>tr", function()
-                require("neotest").run.run()
-            end, { desc = "Run nearest test" })
-            vim.keymap.set("n", "<leader>tf", function()
-                require("neotest").run.run(vim.fn.expand("%"))
-            end, { desc = "Run test file" })
-            vim.keymap.set("n", "<leader>ta", function()
-                require("neotest").run.run(vim.fn.getcwd())
-            end, { desc = "Run all tests" })
-            vim.keymap.set("n", "<leader>ts", function()
-                require("neotest").summary.toggle()
-            end, { desc = "Toggle test summary" })
-            vim.keymap.set("n", "<leader>to", function()
-                require("neotest").output.open()
-            end, { desc = "Open test output" })
-        end,
+        opts = {
+            adapters = {
+                ["neotest-python"] = { dap = { justMyCode = false } },
+                ["neotest-plenary"] = {},
+                ["neotest-vitest"] = {},
+            },
+        },
+        keys = {
+            {
+                "<leader>tr",
+                function()
+                    require("neotest").run.run()
+                end,
+                desc = "Run nearest test",
+            },
+            {
+                "<leader>tf",
+                function()
+                    require("neotest").run.run(vim.fn.expand("%"))
+                end,
+                desc = "Run test file",
+            },
+            {
+                "<leader>ta",
+                function()
+                    require("neotest").run.run(vim.fn.getcwd())
+                end,
+                desc = "Run all tests",
+            },
+            {
+                "<leader>ts",
+                function()
+                    require("neotest").summary.toggle()
+                end,
+                desc = "Toggle test summary",
+            },
+            {
+                "<leader>to",
+                function()
+                    require("neotest").output.open()
+                end,
+                desc = "Open test output",
+            },
+        },
     },
 }

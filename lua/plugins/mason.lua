@@ -1,3 +1,7 @@
+-- Yoru tool list. LazyVim extras add more: hadolint (lang.docker),
+-- sqlfluff (lang.sql), js-debug-adapter (lang.typescript).
+-- eslint_d was replaced by ESLint LSP (extras.linting.eslint) to avoid
+-- duplicate diagnostics; already-installed binaries are left untouched.
 return {
     {
         "mason-org/mason.nvim",
@@ -10,10 +14,10 @@ return {
                 "shellcheck",
                 "shfmt",
                 "prettier",
-                "eslint_d",
                 "markdownlint",
                 "vtsls",
                 "eslint-lsp",
+                "debugpy",
             },
         },
     },
