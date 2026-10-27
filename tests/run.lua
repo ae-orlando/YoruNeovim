@@ -600,7 +600,7 @@ test("fullstack language tooling is declared", function()
 
     local lsp = specs("lsp")[1].opts.servers
     eq({}, lsp.html)
-    eq({}, lsp.cssls)
+    eq("function", type(lsp.cssls.handlers["workspace/configuration"]))
     eq(false, lsp.ruff.enabled)
     eq(4, lsp.vtsls.settings.typescript.format.indentSize)
 
@@ -610,6 +610,98 @@ test("fullstack language tooling is declared", function()
     eq(false, neotest.opts.adapters["neotest-python"].dap.justMyCode)
     assert(neotest.opts.adapters["neotest-vitest"] ~= nil)
     assert(neotest.opts.adapters["neotest-plenary"] ~= nil)
+end)
+
+test("quiet diagnostics retain reports and on-demand access", function()
+    local opts = specs("lsp")[1].opts.diagnostics
+    eq({ underline = false, virtual_text = false, virtual_lines = false }, opts)
+    eq(nil, opts.signs) -- Inherit LazyVim's signs and float settings.
+    eq(nil, opts.float)
+
+    local namespace = vim.api.nvim_create_namespace("YoruDiagnosticTest")
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    cleanups[#cleanups + 1] = function()
+        vim.diagnostic.reset(namespace, bufnr)
+        vim.api.nvim_buf_delete(bufnr, { force = true })
+    end
+    vim.diagnostic.config(opts, namespace)
+    vim.diagnostic.set(namespace, bufnr, {
+        { lnum = 0, col = 0, message = "A real error", severity = vim.diagnostic.severity.ERROR },
+    })
+    eq(1, #vim.diagnostic.get(bufnr, { namespace = namespace }))
+    eq(true, vim.diagnostic.is_enabled({ bufnr = bufnr, ns_id = namespace }))
+end)
+
+test("CSS validation is suppressed per GTK document without changing shared settings", function()
+    local settings = {
+        css = {
+            validate = true,
+            lint = { unknownProperties = "warning" },
+            completion = { triggerPropertyValueCompletion = true },
+        },
+        scss = { validate = true },
+    }
+    local original = vim.deepcopy(settings)
+    replace(vim.lsp, "get_client_by_id", function(id)
+        eq(71, id)
+        return { settings = settings }
+    end)
+    replace(vim.uv, "fs_realpath", function()
+        return nil
+    end)
+    local handler = specs("lsp")[1].opts.servers.cssls.handlers["workspace/configuration"]
+    local response = handler(nil, {
+        items = {
+            { section = "css", scopeUri = "file:///dotfiles/waybar/colors/style.css" },
+            { section = "css", scopeUri = "file:///dotfiles/swaync/Styles/base.css" },
+            { section = "css", scopeUri = "file:///dotfiles/web/style.css" },
+            { section = "css", scopeUri = "file:///dotfiles/waybar-example/style.css" },
+            { section = "css", scopeUri = "file:///dotfiles/myswaync/style.css" },
+            { section = "css" },
+            { section = "css", scopeUri = "untitled:waybar/style.css" },
+            { section = "scss", scopeUri = "file:///dotfiles/waybar/style.scss" },
+            { section = "css.lint", scopeUri = "file:///dotfiles/waybar/style.css" },
+            { section = "missing", scopeUri = "file:///dotfiles/waybar/style.css" },
+            { scopeUri = "file:///dotfiles/waybar/style.css" },
+        },
+    }, { client_id = 71 })
+    local gtk = vim.tbl_extend("force", {}, settings.css, { validate = false })
+    eq({
+        gtk,
+        gtk,
+        settings.css,
+        settings.css,
+        settings.css,
+        settings.css,
+        settings.css,
+        settings.scss,
+        settings.css.lint,
+        vim.NIL,
+        settings,
+    }, response)
+    eq(original, settings)
+end)
+
+test("GTK CSS scoping follows symlinks and supplies missing CSS settings", function()
+    replace(vim.lsp, "get_client_by_id", function()
+        return { settings = {} }
+    end)
+    local symlinks = {
+        ["/dotfiles/panel/theme.css"] = "/dotfiles/waybar/colors/theme.css",
+        ["/home/test/.config/swaync/style.css"] = "/dotfiles/notifications/style.css",
+    }
+    replace(vim.uv, "fs_realpath", function(path)
+        return symlinks[path]
+    end)
+    local handler = specs("lsp")[1].opts.servers.cssls.handlers["workspace/configuration"]
+    local response = handler(nil, {
+        items = {
+            { section = "css", scopeUri = "file:///dotfiles/panel/theme.css" },
+            { section = "css", scopeUri = "file:///home/test/.config/swaync/style.css" },
+            { section = "css", scopeUri = "file:///dotfiles/web/theme.css" },
+        },
+    }, { client_id = 71 })
+    eq({ { validate = false }, { validate = false }, vim.NIL }, response)
 end)
 
 test("SQLfluff respects project dialect and falls back to ANSI", function()
