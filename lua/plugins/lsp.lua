@@ -43,6 +43,7 @@ return {
                 underline = false,
                 virtual_text = false,
                 virtual_lines = false,
+                severity = { min = vim.diagnostic.severity.WARN },
             },
             servers = {
                 vtsls = {

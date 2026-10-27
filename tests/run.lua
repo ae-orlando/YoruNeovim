@@ -614,7 +614,7 @@ end)
 
 test("quiet diagnostics retain reports and on-demand access", function()
     local opts = specs("lsp")[1].opts.diagnostics
-    eq({ underline = false, virtual_text = false, virtual_lines = false }, opts)
+    eq({ underline = false, virtual_text = false, virtual_lines = false, severity = { min = vim.diagnostic.severity.WARN } }, opts)
     eq(nil, opts.signs) -- Inherit LazyVim's signs and float settings.
     eq(nil, opts.float)
 

@@ -66,6 +66,11 @@ return {
                 markdown = { "markdownlint" },
             },
         },
+        -- LazyVim runs nvim-lint on BufWritePost/BufReadPost/InsertLeave.
+        -- Yoru keeps linting manual via <leader>fl to avoid automatic noise.
+        config = function()
+            pcall(vim.api.nvim_del_augroup_by_name, "nvim-lint")
+        end,
         keys = {
             {
                 "<leader>fl",

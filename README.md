@@ -115,6 +115,7 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 - Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:11`, `lua/config/autocmds.lua:28`).
 - Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua follows the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:41`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
+- Linting is manual-only (`<leader>fl`); automatic lint autocmds are disabled to avoid noisy false positives. Low-severity hint/info diagnostics are also hidden.
 
 ### System theme and transparency
 
