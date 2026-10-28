@@ -553,10 +553,47 @@ test("palette parameters and existing workflow policies stay unchanged", functio
     eq({ "--tab-width", "4", "--use-tabs", "false" }, specs("formatting")[1].opts.formatters.prettier.prepend_args)
 end)
 
+test("language tooling only rewrites files on request and JSON keeps no trailing commas", function()
+    -- Format-on-save off: LazyVim reads vim.g.autoformat from config.options.
+    local options = table.concat(vim.fn.readfile(root .. "/lua/config/options.lua"), "\n")
+    assert(options:find("vim.g.autoformat = false", 1, true), "options.lua must disable format-on-save")
+
+    -- ESLint auto-fix off: the flag must be set before config.lazy collects
+    -- plugin specs, otherwise the eslint extra captures the default (true).
+    local init = table.concat(vim.fn.readfile(root .. "/init.lua"), "\n")
+    local flag = init:find("vim.g.lazyvim_eslint_auto_format = false", 1, true)
+    assert(flag, "init.lua must disable ESLint auto-format on save")
+    local bootstrap = init:find('require("config.lazy")', 1, true)
+    assert(bootstrap, "init.lua must bootstrap config.lazy")
+    assert(flag < bootstrap, "eslint flag must be set before config.lazy runs")
+
+    -- JSON uses a formatter that never emits trailing commas, so jsonls
+    -- validation has nothing to flag. jsonls stays validation-only.
+    local conform = specs("formatting")[1].opts
+    eq({ "prettier_json" }, conform.formatters_by_ft.json)
+    eq({ "prettier_json" }, conform.formatters_by_ft.jsonc)
+    eq({ "prettier_json" }, conform.formatters_by_ft.json5)
+    eq({
+        "--stdin-filepath",
+        "$FILENAME",
+        "--tab-width",
+        "4",
+        "--use-tabs",
+        "false",
+        "--trailing-comma",
+        "none",
+    }, conform.formatters.prettier_json.args)
+
+    local lsp = specs("lsp")[1].opts
+    eq(false, lsp.servers.jsonls.settings.json.format.enable)
+    eq(false, lsp.inlay_hints.enabled)
+end)
+
 test("fullstack language tooling is declared", function()
     local lazyvim = vim.json.decode(table.concat(vim.fn.readfile(root .. "/lazyvim.json"), "\n"))
     local required_extras = {
         "lazyvim.plugins.extras.dap.core",
+        "lazyvim.plugins.extras.lang.clangd",
         "lazyvim.plugins.extras.lang.docker",
         "lazyvim.plugins.extras.lang.json",
         "lazyvim.plugins.extras.lang.python",
@@ -577,7 +614,16 @@ test("fullstack language tooling is declared", function()
     end
 
     local mason = find(specs("mason"), "mason-org/mason.nvim").opts.ensure_installed
-    for _, tool in ipairs({ "debugpy", "eslint-lsp", "markdownlint", "pylint", "shellcheck" }) do
+    local required_tools = {
+        "bash-language-server",
+        "clang-format",
+        "debugpy",
+        "eslint-lsp",
+        "markdownlint",
+        "pylint",
+        "shellcheck",
+    }
+    for _, tool in ipairs(required_tools) do
         assert(vim.tbl_contains(mason, tool), "missing mason tool: " .. tool)
     end
     assert(not vim.tbl_contains(mason, "eslint_d"), "eslint_d must be replaced by ESLint LSP")
@@ -593,13 +639,23 @@ test("fullstack language tooling is declared", function()
     local by_ft = lint.opts.linters_by_ft
     eq({ "pylint" }, by_ft.python)
     eq({ "shellcheck" }, by_ft.sh)
+    eq({ "shellcheck" }, by_ft.bash)
     eq({ "markdownlint" }, by_ft.markdown)
     for _, linters in pairs(by_ft) do
         assert(not vim.tbl_contains(linters, "eslint_d"), "eslint_d still wired into nvim-lint")
     end
 
+    -- C/C++ defers to .clang-format; explicit ft=bash behaves like ft=sh.
+    local conform = specs("formatting")[1].opts
+    eq({ "clang_format" }, conform.formatters_by_ft.c)
+    eq({ "clang_format" }, conform.formatters_by_ft.cpp)
+    eq({ "clang_format" }, conform.formatters_by_ft.objc)
+    eq({ "clang_format" }, conform.formatters_by_ft.cuda)
+    eq({ "shfmt" }, conform.formatters_by_ft.bash)
+
     local lsp = specs("lsp")[1].opts.servers
     eq({}, lsp.html)
+    eq({}, lsp.bashls)
     eq("function", type(lsp.cssls.handlers["workspace/configuration"]))
     eq(false, lsp.ruff.enabled)
     eq(4, lsp.vtsls.settings.typescript.format.indentSize)

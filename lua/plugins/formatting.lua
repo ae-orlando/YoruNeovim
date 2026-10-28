@@ -10,14 +10,27 @@ return {
                 typescript = { "prettier" },
                 typescriptreact = { "prettier" },
                 javascriptreact = { "prettier" },
-                json = { "prettier" },
-                jsonc = { "prettier" },
-                json5 = { "prettier" },
+                -- JSON never gains trailing commas: prettier's jsonc parser
+                -- would emit them (v3 default trailingComma="all") and jsonls
+                -- then flags them, so json/jsonc/json5 use prettier_json below.
+                json = { "prettier_json" },
+                jsonc = { "prettier_json" },
+                json5 = { "prettier_json" },
                 html = { "prettier" },
                 css = { "prettier" },
                 markdown = { "prettier" },
                 yaml = { "prettier" },
                 sh = { "shfmt" },
+                -- Neovim resolves bash shebangs, .bashrc and PKGBUILD to ft=sh,
+                -- but an explicit ft=bash buffer must behave identically.
+                bash = { "shfmt" },
+                -- C/C++ follows the project's .clang-format, the same contract
+                -- StyLua has with stylua.toml (no forced indent arguments).
+                c = { "clang_format" },
+                cpp = { "clang_format" },
+                objc = { "clang_format" },
+                objcpp = { "clang_format" },
+                cuda = { "clang_format" },
             },
             -- Keep Prettier/Shfmt aligned with options.lua's four-space defaults.
             -- Explicit CLI arguments override conflicting project indentation.
@@ -29,6 +42,22 @@ return {
                     -- --use-tabs false -> matches expandtab=true (spaces, not tabs)
                     -- CLI flags win over .prettierrc, so this is the "always" guarantee.
                     prepend_args = { "--tab-width", "4", "--use-tabs", "false" },
+                },
+                -- JSON-family formatter: same indent guarantees, but never emits
+                -- trailing commas. Prettier's json parser already omits them;
+                -- jsonc/json5 would not without --trailing-comma none.
+                prettier_json = {
+                    command = "prettier",
+                    args = {
+                        "--stdin-filepath",
+                        "$FILENAME",
+                        "--tab-width",
+                        "4",
+                        "--use-tabs",
+                        "false",
+                        "--trailing-comma",
+                        "none",
+                    },
                 },
                 shfmt = {
                     -- -i 4 -> 4-space indent (shfmt defaults to tabs, must override)
@@ -63,6 +92,7 @@ return {
             linters_by_ft = {
                 python = { "pylint" },
                 sh = { "shellcheck" },
+                bash = { "shellcheck" },
                 markdown = { "markdownlint" },
             },
         },

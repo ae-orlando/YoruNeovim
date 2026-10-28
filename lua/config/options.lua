@@ -1,5 +1,11 @@
 local opt = vim.opt
 
+-- Format only on request (<leader>fp, LazyVim's <leader>cf). LazyVim's own
+-- options load first and set this true; this file runs immediately after and
+-- wins, so no formatter rewrites files on BufWritePre. <leader>uf re-enables
+-- it for a session if wanted.
+vim.g.autoformat = false
+
 vim.opt.wrap = false
 
 -- ============================================

@@ -2,9 +2,9 @@
 -- tabstop=4, shiftwidth=4, softtabstop=4, expandtab=true (4 spaces).
 -- conform.nvim + prettier is the primary JS/TS formatter, but when it falls
 -- back to LSP formatting (lsp_format="fallback"), vtsls must also emit 4 spaces.
--- Language extras (Python, Tailwind, JSON, YAML, Docker, SQL, ESLint) add
--- their own servers via lazyvim.json; the entries below cover what LazyVim
--- has no extra for.
+-- Language extras (C/C++, Python, Tailwind, JSON, YAML, Docker, SQL, ESLint)
+-- add their own servers via lazyvim.json; the entries below cover what
+-- LazyVim has no extra for, plus Yoru overrides of extra-provided servers.
 local function gtk_css_path(path)
     return path ~= nil and (path:find("/waybar/", 1, true) ~= nil or path:find("/swaync/", 1, true) ~= nil)
 end
@@ -45,6 +45,11 @@ return {
                 virtual_lines = false,
                 severity = { min = vim.diagnostic.severity.WARN },
             },
+            -- Inline parameter/return hints are noise in every language; hover
+            -- (<K>/Ctrl-k) still shows signatures when wanted.
+            inlay_hints = {
+                enabled = false,
+            },
             servers = {
                 vtsls = {
                     settings = {
@@ -76,6 +81,22 @@ return {
                         ["workspace/configuration"] = css_configuration,
                     },
                 },
+                -- lang.json enables jsonls formatting on top of its validation.
+                -- Conform's prettier_json is the only JSON formatter, so keep
+                -- jsonls for schemas + validation only.
+                jsonls = {
+                    settings = {
+                        json = {
+                            format = {
+                                enable = false,
+                            },
+                        },
+                    },
+                },
+                -- Bash: no LazyVim extra covers it. bashls brings hover,
+                -- completion and definition; ShellCheck remains the manual
+                -- linter so its rules are never reported twice.
+                bashls = {},
                 -- lang.python enables the Ruff LSP by default; Yoru keeps Pylint
                 -- as the single Python linter so diagnostics are not doubled.
                 ruff = { enabled = false },

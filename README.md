@@ -68,8 +68,8 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 
 | Keys         | Action                                     | Source                           |
 | ------------ | ------------------------------------------ | -------------------------------- |
-| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:48`  |
-| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:71`  |
+| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:77`  |
+| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:106` |
 | `<leader>pp` | Open the Snacks project picker             | `lua/plugins/project.lua:7`      |
 | `<leader>Ss` | Save the current project session           | `lua/plugins/session.lua:8`      |
 | `<leader>Sl` | Restore the current project/branch session | `lua/plugins/session.lua:15`     |
@@ -89,33 +89,37 @@ Persistence automatically saves session layout and open-file information on exit
 
 Browser preview supports HTML, Markdown, AsciiDoc, and SVG on `127.0.0.1:5500` (`lua/plugins/live-server.lua:3`).
 
-Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:12`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`. `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:7`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
+Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:13`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`; C/C++ debugging uses `codelldb` from the clangd extra (`lazyvim.json:4`). `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:8`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
 
 ### Language tooling
 
-| Language                            | Configured tooling                                                                                 |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
-| JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics and fixes, Vitest adapter, Node/browser debugging          |
-| HTML / CSS / Tailwind               | html and cssls servers, Tailwind CSS server, Prettier                                              |
-| Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled |
-| JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation, Prettier                                            |
-| Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                  |
-| SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                              |
-| Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                       |
-| Shell                               | Shfmt formatting, ShellCheck diagnostics                                                           |
-| Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                        |
+| Language                            | Configured tooling                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics (save-time auto-fix disabled), Vitest adapter, Node/browser debugging |
+| HTML / CSS / Tailwind               | html and cssls servers, Tailwind CSS server, Prettier                                                         |
+| Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled            |
+| C / C++ / CUDA                      | clangd with clang-tidy diagnostics, clang-format, codelldb debugging, `<leader>ch` source/header switch       |
+| JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation (jsonls never formats), Prettier without trailing commas        |
+| Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                             |
+| SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                                         |
+| Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                                  |
+| Shell                               | bash-lsp hover/completion, Shfmt formatting, ShellCheck diagnostics                                           |
+| Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                                   |
 
-Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:9`, `lua/plugins/lsp.lua:12`, and `lua/plugins/test.lua:17`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
+Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:9`, `lua/plugins/lsp.lua:53`, and `lua/plugins/test.lua:17`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
 
 ## Configuration
 
 ### Native interface and editing defaults
 
 - Keep native `:`, `/`, and `?` at the bottom. Noice handles notifications, not command lines, messages, or LSP hover/signature windows (`lua/plugins/noice.lua:5`).
-- Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:11`, `lua/config/autocmds.lua:28`).
-- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua follows the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:41`).
+- Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:17`, `lua/config/autocmds.lua:28`).
+- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua and clang-format follow the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:44`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
 - Linting is manual-only (`<leader>fl`); automatic lint autocmds are disabled to avoid noisy false positives. Low-severity hint/info diagnostics are also hidden.
+- Nothing rewrites a file unless asked: format-on-save is off (`vim.g.autoformat = false`, `lua/config/options.lua:7`), ESLint's save-time auto-fix is off (`vim.g.lazyvim_eslint_auto_format = false`, `init.lua:12`), and jsonls is validation-only (`lua/plugins/lsp.lua:87`). Format explicitly with `<leader>fp` or LazyVim's `<leader>cf`; `<leader>uf` re-enables auto-format for a session.
+- JSON never gains trailing commas: `json`, `jsonc`, and `json5` use a dedicated `prettier_json` formatter with `--trailing-comma none`, so jsonls validation has nothing to flag (`lua/plugins/formatting.lua:49`).
+- Inlay hints stay off globally to keep buffers clean; hover and signature help remain on demand (`lua/plugins/lsp.lua:50`).
 
 ### System theme and transparency
 
