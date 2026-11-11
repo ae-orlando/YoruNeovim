@@ -619,12 +619,16 @@ test("language tooling is declared", function()
     local required_tools = {
         "bash-language-server",
         "clang-format",
+        "css-lsp",
         "debugpy",
+        "emmet-language-server",
         "eslint-lsp",
+        "html-lsp",
         "markdownlint",
         "pylint",
         "rust-analyzer",
         "shellcheck",
+        "tailwindcss-language-server",
         "taplo",
     }
     for _, tool in ipairs(required_tools) do
@@ -664,11 +668,25 @@ test("language tooling is declared", function()
     eq({ "rustfmt" }, conform.formatters_by_ft.rust)
     eq({ "taplo" }, conform.formatters_by_ft.toml)
     eq({ "shfmt" }, conform.formatters_by_ft.bash)
+    eq({ "prettier" }, conform.formatters_by_ft.html)
+    eq({ "prettier" }, conform.formatters_by_ft.css)
+    eq({ "prettier" }, conform.formatters_by_ft.scss)
+    eq({ "prettier" }, conform.formatters_by_ft.less)
+
+    local treesitter = specs("treesitter")[1]
+    local treesitter_opts = { ensure_installed = { "html" } }
+    treesitter.opts(nil, treesitter_opts)
+    assert(vim.tbl_contains(treesitter_opts.ensure_installed, "html"))
+    assert(vim.tbl_contains(treesitter_opts.ensure_installed, "css"))
+    assert(vim.tbl_contains(treesitter_opts.ensure_installed, "scss"))
 
     local lsp = specs("lsp")[1].opts.servers
     eq({}, lsp.html)
     eq({}, lsp.bashls)
     eq("function", type(lsp.cssls.handlers["workspace/configuration"]))
+    eq("always", lsp.emmet_language_server.init_options.showExpandedAbbreviation)
+    eq(true, lsp.emmet_language_server.init_options.showAbbreviationSuggestions)
+    eq(true, lsp.emmet_language_server.init_options.showSuggestionsAsSnippets)
     eq(false, lsp.ruff.enabled)
     eq(4, lsp.vtsls.settings.typescript.format.indentSize)
 
@@ -682,7 +700,12 @@ end)
 
 test("quiet diagnostics retain reports and on-demand access", function()
     local opts = specs("lsp")[1].opts.diagnostics
-    eq({ underline = false, virtual_text = false, virtual_lines = false, severity = { min = vim.diagnostic.severity.WARN } }, opts)
+    eq({
+        underline = false,
+        virtual_text = false,
+        virtual_lines = false,
+        severity = { min = vim.diagnostic.severity.WARN },
+    }, opts)
     eq(nil, opts.signs) -- Inherit LazyVim's signs and float settings.
     eq(nil, opts.float)
 

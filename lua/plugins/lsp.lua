@@ -81,6 +81,16 @@ return {
                         ["workspace/configuration"] = css_configuration,
                     },
                 },
+                -- Emmet abbreviations in markup, stylesheet, and JSX/TSX
+                -- buffers. blink.cmp supplies the completion UI and expands
+                -- the snippet bodies.
+                emmet_language_server = {
+                    init_options = {
+                        showExpandedAbbreviation = "always",
+                        showAbbreviationSuggestions = true,
+                        showSuggestionsAsSnippets = true,
+                    },
+                },
                 -- lang.json enables jsonls formatting on top of its validation.
                 -- Conform's prettier_json is the only JSON formatter, so keep
                 -- jsonls for schemas + validation only.

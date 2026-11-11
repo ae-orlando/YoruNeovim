@@ -5,6 +5,8 @@
 -- duplicate diagnostics; already-installed binaries are left untouched.
 -- rustfmt and clippy remain system toolchain components; rust-analyzer and
 -- taplo are installed by Mason so the editor setup does not depend on rustup.
+-- The web tools are listed explicitly even though lang.tailwind can install
+-- its server, so HTML/CSS/Emmet support is reproducible in a fresh setup.
 return {
     {
         "mason-org/mason.nvim",
@@ -18,6 +20,10 @@ return {
                 "shfmt",
                 "prettier",
                 "markdownlint",
+                "html-lsp",
+                "css-lsp",
+                "emmet-language-server",
+                "tailwindcss-language-server",
                 "clang-format",
                 "vtsls",
                 "rust-analyzer",

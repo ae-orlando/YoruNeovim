@@ -18,7 +18,11 @@ return {
                 jsonc = { "prettier_json" },
                 json5 = { "prettier_json" },
                 html = { "prettier" },
+                -- Prettier covers CSS, SCSS, and Less. Indented Sass is not
+                -- supported by Prettier, so no formatter is forced for it.
                 css = { "prettier" },
+                scss = { "prettier" },
+                less = { "prettier" },
                 markdown = { "prettier" },
                 yaml = { "prettier" },
                 -- Taplo follows the project's taplo.toml/.taplo.toml. Cargo.toml
