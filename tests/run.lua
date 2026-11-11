@@ -589,7 +589,7 @@ test("language tooling only rewrites files on request and JSON keeps no trailing
     eq(false, lsp.inlay_hints.enabled)
 end)
 
-test("fullstack language tooling is declared", function()
+test("language tooling is declared", function()
     local lazyvim = vim.json.decode(table.concat(vim.fn.readfile(root .. "/lazyvim.json"), "\n"))
     local required_extras = {
         "lazyvim.plugins.extras.dap.core",
@@ -597,8 +597,10 @@ test("fullstack language tooling is declared", function()
         "lazyvim.plugins.extras.lang.docker",
         "lazyvim.plugins.extras.lang.json",
         "lazyvim.plugins.extras.lang.python",
+        "lazyvim.plugins.extras.lang.rust",
         "lazyvim.plugins.extras.lang.sql",
         "lazyvim.plugins.extras.lang.tailwind",
+        "lazyvim.plugins.extras.lang.toml",
         "lazyvim.plugins.extras.lang.typescript",
         "lazyvim.plugins.extras.lang.yaml",
         "lazyvim.plugins.extras.linting.eslint",
@@ -621,7 +623,9 @@ test("fullstack language tooling is declared", function()
         "eslint-lsp",
         "markdownlint",
         "pylint",
+        "rust-analyzer",
         "shellcheck",
+        "taplo",
     }
     for _, tool in ipairs(required_tools) do
         assert(vim.tbl_contains(mason, tool), "missing mason tool: " .. tool)
@@ -636,8 +640,14 @@ test("fullstack language tooling is declared", function()
 
     local lint = specs("formatting")[2]
     eq("mfussenegger/nvim-lint", lint[1])
+    eq("function", type(lint.config))
+    local fake_lint = { linters_by_ft = {} }
+    replace(package.loaded, "lint", fake_lint)
+    lint.config(nil, lint.opts)
+    eq(lint.opts.linters_by_ft, fake_lint.linters_by_ft, "nvim-lint maps must survive the manual-only setup")
     local by_ft = lint.opts.linters_by_ft
     eq({ "pylint" }, by_ft.python)
+    eq({ "clippy" }, by_ft.rust)
     eq({ "shellcheck" }, by_ft.sh)
     eq({ "shellcheck" }, by_ft.bash)
     eq({ "markdownlint" }, by_ft.markdown)
@@ -645,12 +655,14 @@ test("fullstack language tooling is declared", function()
         assert(not vim.tbl_contains(linters, "eslint_d"), "eslint_d still wired into nvim-lint")
     end
 
-    -- C/C++ defers to .clang-format; explicit ft=bash behaves like ft=sh.
+    -- C/C++ defers to .clang-format; Rust defers to rustfmt.toml and Cargo.toml.
     local conform = specs("formatting")[1].opts
     eq({ "clang_format" }, conform.formatters_by_ft.c)
     eq({ "clang_format" }, conform.formatters_by_ft.cpp)
     eq({ "clang_format" }, conform.formatters_by_ft.objc)
     eq({ "clang_format" }, conform.formatters_by_ft.cuda)
+    eq({ "rustfmt" }, conform.formatters_by_ft.rust)
+    eq({ "taplo" }, conform.formatters_by_ft.toml)
     eq({ "shfmt" }, conform.formatters_by_ft.bash)
 
     local lsp = specs("lsp")[1].opts.servers

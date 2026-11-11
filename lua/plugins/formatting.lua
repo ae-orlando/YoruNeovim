@@ -1,4 +1,5 @@
--- Yoru formatting + linting, LazyVim opts-style (no custom `config`, see lazyvim/plugins/formatting.lua)
+-- Yoru formatting + linting, LazyVim opts-first. nvim-lint keeps a small custom
+-- config so automatic linting stays off while its linter maps stay available.
 return {
     {
         "stevearc/conform.nvim",
@@ -20,6 +21,12 @@ return {
                 css = { "prettier" },
                 markdown = { "prettier" },
                 yaml = { "prettier" },
+                -- Taplo follows the project's taplo.toml/.taplo.toml. Cargo.toml
+                -- also gets crate completion and hover from crates.nvim.
+                toml = { "taplo" },
+                -- rustfmt reads the crate edition from Cargo.toml and follows
+                -- the project's rustfmt.toml; no forced arguments here.
+                rust = { "rustfmt" },
                 sh = { "shfmt" },
                 -- Neovim resolves bash shebangs, .bashrc and PKGBUILD to ft=sh,
                 -- but an explicit ft=bash buffer must behave identically.
@@ -91,14 +98,19 @@ return {
             -- eslint_d was removed so diagnostics are not reported twice.
             linters_by_ft = {
                 python = { "pylint" },
+                -- Clippy runs on demand. rust-analyzer's cargo-check diagnostics
+                -- stay separate, so saving a buffer never invokes Clippy.
+                rust = { "clippy" },
                 sh = { "shellcheck" },
                 bash = { "shellcheck" },
                 markdown = { "markdownlint" },
             },
         },
-        -- LazyVim runs nvim-lint on BufWritePost/BufReadPost/InsertLeave.
-        -- Yoru keeps linting manual via <leader>fl to avoid automatic noise.
-        config = function()
+        -- LazyVim's own nvim-lint config would install automatic lint
+        -- autocmds. Set the maps manually, then remove that augroup so only
+        -- <leader>fl runs a linter.
+        config = function(_, opts)
+            require("lint").linters_by_ft = opts.linters_by_ft
             pcall(vim.api.nvim_del_augroup_by_name, "nvim-lint")
         end,
         keys = {

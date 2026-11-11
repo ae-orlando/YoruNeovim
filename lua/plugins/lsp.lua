@@ -2,7 +2,7 @@
 -- tabstop=4, shiftwidth=4, softtabstop=4, expandtab=true (4 spaces).
 -- conform.nvim + prettier is the primary JS/TS formatter, but when it falls
 -- back to LSP formatting (lsp_format="fallback"), vtsls must also emit 4 spaces.
--- Language extras (C/C++, Python, Tailwind, JSON, YAML, Docker, SQL, ESLint)
+-- Language extras (C/C++, Python, Rust, Tailwind, JSON, YAML, TOML, Docker, SQL, ESLint)
 -- add their own servers via lazyvim.json; the entries below cover what
 -- LazyVim has no extra for, plus Yoru overrides of extra-provided servers.
 local function gtk_css_path(path)

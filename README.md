@@ -4,7 +4,7 @@ License: [Apache-2.0](LICENSE). Base: [LazyVim](https://github.com/LazyVim/LazyV
 
 ## Overview
 
-Yoru is a LazyVim-based Neovim configuration for TypeScript development, dotfiles, and writing, managed with `lazy.nvim`. It keeps the native bottom command line and follows the desktop palette through Matugen, with transparent editor backgrounds.
+Yoru is a LazyVim-based Neovim configuration for TypeScript and Rust development, dotfiles, and writing, managed with `lazy.nvim`. It keeps the native bottom command line and follows the desktop palette through Matugen, with transparent editor backgrounds.
 
 Neovim leaves editor backgrounds transparent, **Kitty controls opacity**, and **Hyprland controls blur**. The desktop setup owns readability adjustments; this configuration does not change terminal opacity or compositor settings.
 
@@ -34,6 +34,7 @@ The screenshots include the surrounding Kitty/Hyprland setup; Neovim alone does 
 - `ripgrep`, `fd`, and `fzf` for search and picker workflows.
 - Node.js/npm for Prettier, ESLint tooling, and Vtsls.
 - A Python 3 environment for Python tools and tests; install project test runners separately.
+- A Rust toolchain (`rustc`, `cargo`, `rustfmt`, `clippy`) for Rust builds, formatting, and linting. Mason installs `rust-analyzer` and Taplo.
 - A Nerd Font for icons and a clipboard provider for the system clipboard, such as `wl-clipboard` on Wayland.
 - Optional: Matugen writing `~/.config/matugen/themes/nvim-colors.json`.
 - Optional: Kitty and Hyprland for the desktop transparency/blur presentation shown above.
@@ -68,8 +69,8 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 
 | Keys         | Action                                     | Source                           |
 | ------------ | ------------------------------------------ | -------------------------------- |
-| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:77`  |
-| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:106` |
+| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:84`  |
+| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:118` |
 | `<leader>pp` | Open the Snacks project picker             | `lua/plugins/project.lua:7`      |
 | `<leader>Ss` | Save the current project session           | `lua/plugins/session.lua:8`      |
 | `<leader>Sl` | Restore the current project/branch session | `lua/plugins/session.lua:15`     |
@@ -89,7 +90,7 @@ Persistence automatically saves session layout and open-file information on exit
 
 Browser preview supports HTML, Markdown, AsciiDoc, and SVG on `127.0.0.1:5500` (`lua/plugins/live-server.lua:3`).
 
-Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:13`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`; C/C++ debugging uses `codelldb` from the clangd extra (`lazyvim.json:4`). `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:8`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
+Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:15`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`; C/C++ debugging uses `codelldb` from the clangd extra (`lazyvim.json:4`); Rust debugging uses `codelldb` through rustaceanvim (`<leader>dr` lists debuggables, `<leader>cR` opens Rust code actions). `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:9`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
 
 ### Language tooling
 
@@ -98,15 +99,17 @@ Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyv
 | JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics (save-time auto-fix disabled), Vitest adapter, Node/browser debugging |
 | HTML / CSS / Tailwind               | html and cssls servers, Tailwind CSS server, Prettier                                                         |
 | Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled            |
+| Rust                                | rust-analyzer via rustaceanvim, rustfmt, manual Clippy, crates.nvim, codelldb debugging, neotest adapter      |
 | C / C++ / CUDA                      | clangd with clang-tidy diagnostics, clang-format, codelldb debugging, `<leader>ch` source/header switch       |
 | JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation (jsonls never formats), Prettier without trailing commas        |
+| TOML / Cargo.toml                   | Taplo validation, completion and formatting; crates.nvim crate completion                                     |
 | Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                             |
 | SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                                         |
 | Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                                  |
 | Shell                               | bash-lsp hover/completion, Shfmt formatting, ShellCheck diagnostics                                           |
 | Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                                   |
 
-Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:9`, `lua/plugins/lsp.lua:53`, and `lua/plugins/test.lua:17`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
+Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:12`, `lua/plugins/lsp.lua:53`, and `lua/plugins/test.lua:18`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
 
 ## Configuration
 
@@ -114,11 +117,11 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 
 - Keep native `:`, `/`, and `?` at the bottom. Noice handles notifications, not command lines, messages, or LSP hover/signature windows (`lua/plugins/noice.lua:5`).
 - Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:17`, `lua/config/autocmds.lua:28`).
-- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua and clang-format follow the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:44`).
+- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua, clang-format, and rustfmt follow the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:42`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
 - Linting is manual-only (`<leader>fl`); automatic lint autocmds are disabled to avoid noisy false positives. Low-severity hint/info diagnostics are also hidden.
 - Nothing rewrites a file unless asked: format-on-save is off (`vim.g.autoformat = false`, `lua/config/options.lua:7`), ESLint's save-time auto-fix is off (`vim.g.lazyvim_eslint_auto_format = false`, `init.lua:12`), and jsonls is validation-only (`lua/plugins/lsp.lua:87`). Format explicitly with `<leader>fp` or LazyVim's `<leader>cf`; `<leader>uf` re-enables auto-format for a session.
-- JSON never gains trailing commas: `json`, `jsonc`, and `json5` use a dedicated `prettier_json` formatter with `--trailing-comma none`, so jsonls validation has nothing to flag (`lua/plugins/formatting.lua:49`).
+- JSON never gains trailing commas: `json`, `jsonc`, and `json5` use a dedicated `prettier_json` formatter with `--trailing-comma none`, so jsonls validation has nothing to flag (`lua/plugins/formatting.lua:56`).
 - Inlay hints stay off globally to keep buffers clean; hover and signature help remain on demand (`lua/plugins/lsp.lua:50`).
 
 ### System theme and transparency
@@ -182,7 +185,7 @@ YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
     nvim --headless -u NONE -i NONE -n -l tests/run.lua
 ```
 
-For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, syntax-only foreground changes across dark/light palettes, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the fullstack extras and tooling wiring.
+For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, syntax-only foreground changes across dark/light palettes, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the language extras and tooling wiring.
 
 ## Project Structure
 
