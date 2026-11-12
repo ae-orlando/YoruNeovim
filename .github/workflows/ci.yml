@@ -1,0 +1,89 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    checks:
+        name: Formatting, unit, and integration tests
+        runs-on: ubuntu-24.04
+        timeout-minutes: 15
+        steps:
+            - name: Check out source without persisting credentials
+              uses: actions/checkout@v4
+              with:
+                  persist-credentials: false
+
+            - name: Install Neovim 0.12.6
+              run: |
+                  curl -fsSLo "${RUNNER_TEMP}/nvim.tar.gz" \
+                    https://github.com/neovim/neovim/releases/download/v0.12.6/nvim-linux-x86_64.tar.gz
+                  sudo tar -C /opt -xzf "${RUNNER_TEMP}/nvim.tar.gz"
+                  sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+                  nvim --version | head -3
+
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Install pinned formatters
+              run: |
+                  npm install --global prettier@3.9.10 markdownlint-cli@0.50.0
+                  curl -fsSLo "${RUNNER_TEMP}/stylua.zip" \
+                    https://github.com/JohnnyMorganz/StyLua/releases/download/v2.6.0/stylua-linux-x86_64.zip
+                  sudo unzip -o "${RUNNER_TEMP}/stylua.zip" -d /usr/local/bin
+                  stylua --version
+                  prettier --version
+                  markdownlint --version
+
+            - name: Check Lua formatting
+              run: stylua --check lua tests/run.lua init.lua
+
+            - name: Check Markdown formatting
+              run: prettier --check README.md
+
+            - name: Lint Markdown
+              run: markdownlint README.md
+
+            - name: Validate JSON
+              run: jq empty lazyvim.json lazy-lock.json .neoconf.json
+
+            - name: Run unit tests
+              run: nvim --headless -u NONE -i NONE -n -l tests/run.lua
+
+            - name: Install pinned integration dependencies
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  deps="${RUNNER_TEMP}/yoru-integration-deps"
+                  mkdir -p "${deps}"
+                  while read -r name url; do
+                    commit="$(jq -r --arg name "${name}" '.[$name].commit' lazy-lock.json)"
+                    test "${commit}" != "null"
+                    git clone --quiet --filter=blob:none --no-checkout "${url}" "${deps}/${name}"
+                    git -C "${deps}/${name}" checkout --quiet --detach "${commit}"
+                  done <<'EOF'
+                  LazyVim https://github.com/LazyVim/LazyVim
+                  lazy.nvim https://github.com/folke/lazy.nvim
+                  matugen.nvim https://github.com/daedlock/matugen.nvim
+                  catppuccin https://github.com/catppuccin/nvim
+                  lualine.nvim https://github.com/nvim-lualine/lualine.nvim
+                  bufferline.nvim https://github.com/akinsho/bufferline.nvim
+                  persistence.nvim https://github.com/folke/persistence.nvim
+                  nvim-colorizer.lua https://github.com/NvChad/nvim-colorizer.lua
+                  EOF
+
+            - name: Run integration tests against pinned plugins
+              env:
+                  YORU_TEST_PLUGIN_DIR: ${{ runner.temp }}/yoru-integration-deps
+              run: nvim --headless -u NONE -i NONE -n -l tests/run.lua

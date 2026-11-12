@@ -187,6 +187,8 @@ YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
 
 For a default installation, use the `nvim/lazy` directory instead. Integration checks do not install plugins, access the network, change the desktop palette, or write session files. They cover palette reloads, syntax-only foreground changes across dark/light palettes, preserved UI options and hook counts, picker mappings, session-stop behavior, Colorizer compatibility, and the language extras and tooling wiring.
 
+GitHub Actions runs the formatting, unit, and integration checks on every push and pull request (`.github/workflows/ci.yml`). The integration job clones only the pinned plugins those tests load, using commits from `lazy-lock.json`.
+
 ## Project Structure
 
 ```text
@@ -194,6 +196,7 @@ init.lua           # bootstrap
 lua/config/        # LazyVim setup, options, syntax colors, highlight autocmds
 lua/plugins/       # Yoru overrides and workflow mappings
 assets/            # screenshots
+.github/workflows/ # CI checks
 tests/run.lua      # isolated regression and opt-in integration checks
 lazyvim.json       # enabled LazyVim extras
 lazy-lock.json     # plugin commit pins, not Mason/project tool versions
