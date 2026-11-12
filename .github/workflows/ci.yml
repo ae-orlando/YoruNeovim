@@ -19,7 +19,7 @@ jobs:
         timeout-minutes: 15
         steps:
             - name: Check out source without persisting credentials
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
               with:
                   persist-credentials: false
 
@@ -32,7 +32,7 @@ jobs:
                   nvim --version | head -3
 
             - name: Install Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v7
               with:
                   node-version: 22
 
