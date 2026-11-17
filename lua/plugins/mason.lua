@@ -31,6 +31,7 @@ return {
                 "eslint-lsp",
                 "bash-language-server",
                 "debugpy",
+                "mrkdown-oxide",
             },
         },
     },

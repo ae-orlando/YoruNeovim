@@ -36,7 +36,9 @@ return {
                 -- but an explicit ft=bash buffer must behave identically.
                 bash = { "shfmt" },
                 -- C/C++ follows the project's .clang-format, the same contract
-                -- StyLua has with stylua.toml (no forced indent arguments).
+                -- StyLua has with stylua.toml (no forced indent arguments);
+                -- clang_format's prepend_args below adds a fallback style for
+                -- buffers whose project has no config file.
                 c = { "clang_format" },
                 cpp = { "clang_format" },
                 objc = { "clang_format" },
@@ -77,6 +79,30 @@ return {
                 isort = {
                     -- keep isort output compatible with black (which always uses 4 spaces)
                     prepend_args = { "--profile", "black" },
+                },
+                -- C/C++: with no project config clang-format silently uses
+                -- LLVM style (2-space indent, braces attached), which fights
+                -- options.lua's four spaces and the repo's function-brace
+                -- layout. Only config-less buffers get the fallback; a
+                -- project .clang-format always wins. prepend_args is a
+                -- function so range formatting (range_args) inherits it.
+                clang_format = {
+                    prepend_args = function(_, ctx)
+                        -- BasedOnStyle: LLVM + BreakBeforeBraces: Linux ->
+                        -- function braces on their own line, if/while braces
+                        -- attached. clang-format 23 dropped the Linux preset
+                        -- but this brace value remains, on old and new.
+                        local fallback = {
+                            "--style={BasedOnStyle: LLVM, BreakBeforeBraces: Linux, IndentWidth: 4, ColumnLimit: 100}",
+                        }
+                        local path = ctx and ctx.filename
+                        if not path or path == "" then
+                            return fallback
+                        end
+                        local found =
+                            vim.fs.find({ ".clang-format", "_clang-format" }, { path = path, upward = true })[1]
+                        return found and {} or fallback
+                    end,
                 },
                 -- stylua follows the target project's config; this repository's
                 -- stylua.toml sets indent_type="Spaces", indent_width=4.

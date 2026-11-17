@@ -673,6 +673,36 @@ test("language tooling is declared", function()
     eq({ "prettier" }, conform.formatters_by_ft.scss)
     eq({ "prettier" }, conform.formatters_by_ft.less)
 
+    -- C formatting defers to the project's .clang-format; a config-less
+    -- buffer gets the fallback style instead of LLVM's 2-space attach.
+    local clang = conform.formatters.clang_format
+    eq("function", type(clang.prepend_args))
+
+    local plain = vim.fn.tempname()
+    vim.fn.mkdir(plain, "p")
+    cleanups[#cleanups + 1] = function()
+        vim.fn.delete(plain, "rf")
+    end
+    local fallback = clang.prepend_args(nil, { filename = plain .. "/main.c" })
+    eq(1, #fallback)
+    assert(fallback[1]:find("IndentWidth: 4", 1, true), "fallback must keep four-space indent")
+    assert(
+        fallback[1]:find("BreakBeforeBraces: Linux", 1, true),
+        "fallback must keep function braces on their own line"
+    )
+    assert(fallback[1]:find("ColumnLimit: 100", 1, true), "fallback must keep a 100-column limit")
+
+    local configured = vim.fn.tempname()
+    vim.fn.mkdir(configured, "p")
+    cleanups[#cleanups + 1] = function()
+        vim.fn.delete(configured, "rf")
+    end
+    vim.fn.writefile({ "BasedOnStyle: LLVM" }, configured .. "/.clang-format")
+    eq({}, clang.prepend_args(nil, { filename = configured .. "/main.c" }), "project config must win")
+
+    -- No filename to search: apply the fallback rather than LLVM defaults.
+    eq(1, #clang.prepend_args(nil, {}))
+
     local treesitter = specs("treesitter")[1]
     local treesitter_opts = { ensure_installed = { "html" } }
     treesitter.opts(nil, treesitter_opts)

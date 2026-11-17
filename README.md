@@ -69,8 +69,8 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 
 | Keys         | Action                                     | Source                           |
 | ------------ | ------------------------------------------ | -------------------------------- |
-| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:88`  |
-| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:122` |
+| `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:114` |
+| `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:148` |
 | `<leader>pp` | Open the Snacks project picker             | `lua/plugins/project.lua:7`      |
 | `<leader>Ss` | Save the current project session           | `lua/plugins/session.lua:8`      |
 | `<leader>Sl` | Restore the current project/branch session | `lua/plugins/session.lua:15`     |
@@ -94,20 +94,20 @@ Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyv
 
 ### Language tooling
 
-| Language                            | Configured tooling                                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics (save-time auto-fix disabled), Vitest adapter, Node/browser debugging |
-| HTML / CSS / SCSS / Less / Tailwind | html, cssls, Emmet abbreviations, auto-closing tags, Tailwind CSS server, Prettier, Tree-sitter css/scss      |
-| Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled            |
-| Rust                                | rust-analyzer via rustaceanvim, rustfmt, manual Clippy, crates.nvim, codelldb debugging, neotest adapter      |
-| C / C++ / CUDA                      | clangd with clang-tidy diagnostics, clang-format, codelldb debugging, `<leader>ch` source/header switch       |
-| JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation (jsonls never formats), Prettier without trailing commas        |
-| TOML / Cargo.toml                   | Taplo validation, completion and formatting; crates.nvim crate completion                                     |
-| Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                             |
-| SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                                         |
-| Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                                  |
-| Shell                               | bash-lsp hover/completion, Shfmt formatting, ShellCheck diagnostics                                           |
-| Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                                   |
+| Language                            | Configured tooling                                                                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| JavaScript / TypeScript / JSX / TSX | Vtsls, Prettier, ESLint LSP diagnostics (save-time auto-fix disabled), Vitest adapter, Node/browser debugging                                                                              |
+| HTML / CSS / SCSS / Less / Tailwind | html, cssls, Emmet abbreviations, auto-closing tags, Tailwind CSS server, Prettier, Tree-sitter css/scss                                                                                   |
+| Python                              | Pyright, Isort then Black, Pylint, virtualenv selector, pytest adapter, debugpy; Ruff LSP disabled                                                                                         |
+| Rust                                | rust-analyzer via rustaceanvim, rustfmt, manual Clippy, crates.nvim, codelldb debugging, neotest adapter                                                                                   |
+| C / C++ / CUDA                      | clangd with clang-tidy diagnostics, clang-format (4-space, function braces below, 100 cols when the project has no `.clang-format`), codelldb debugging, `<leader>ch` source/header switch |
+| JSON / YAML / JSONC / JSON5         | jsonls and yamlls with SchemaStore validation (jsonls never formats), Prettier without trailing commas                                                                                     |
+| TOML / Cargo.toml                   | Taplo validation, completion and formatting; crates.nvim crate completion                                                                                                                  |
+| Docker / Compose                    | Dockerfile and Compose language servers, Hadolint                                                                                                                                          |
+| SQL                                 | Dadbod database UI and completion, SQLFluff using the project dialect                                                                                                                      |
+| Markdown                            | Prettier, Markdownlint, in-editor rendering, browser preview                                                                                                                               |
+| Shell                               | bash-lsp hover/completion, Shfmt formatting, ShellCheck diagnostics                                                                                                                        |
+| Lua                                 | LazyVim's Lua language server, StyLua, Plenary test adapter                                                                                                                                |
 
 Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lua:14`, `lua/plugins/lsp.lua:53`, `lua/plugins/treesitter.lua:3`, and `lua/plugins/test.lua:18`. Project test runners such as pytest and Vitest must be installed in the project's environment. Installing a Mason tool does not by itself configure every editor integration for it.
 
@@ -117,11 +117,11 @@ Sources: `lazyvim.json:2`, `lua/plugins/formatting.lua:6`, `lua/plugins/mason.lu
 
 - Keep native `:`, `/`, and `?` at the bottom. Noice handles notifications, not command lines, messages, or LSP hover/signature windows (`lua/plugins/noice.lua:5`).
 - Highlight the current line number rather than the full line, and keep comments bold (`lua/config/options.lua:17`, `lua/config/autocmds.lua:28`).
-- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua, clang-format, and rustfmt follow the target project's configuration; this repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:46`).
+- Use four-space editor defaults. Prettier and Shfmt receive explicit four-space arguments; **Prettier's arguments override project indentation settings**. StyLua and rustfmt follow the target project's configuration; clang-format does too, but falls back to four-space indent with function braces on their own line and a 100-column limit when the project has no `.clang-format` (`lua/plugins/formatting.lua:89`). This repository's `stylua.toml` specifies four spaces (`lua/plugins/formatting.lua:48`).
 - Keep Gitsigns disabled (`lua/plugins/git.lua:5`).
 - Linting is manual-only (`<leader>fl`); automatic lint autocmds are disabled to avoid noisy false positives. Low-severity hint/info diagnostics are also hidden.
 - Nothing rewrites a file unless asked: format-on-save is off (`vim.g.autoformat = false`, `lua/config/options.lua:7`), ESLint's save-time auto-fix is off (`vim.g.lazyvim_eslint_auto_format = false`, `init.lua:12`), and jsonls is validation-only (`lua/plugins/lsp.lua:97`). Format explicitly with `<leader>fp` or LazyVim's `<leader>cf`; `<leader>uf` re-enables auto-format for a session.
-- JSON never gains trailing commas: `json`, `jsonc`, and `json5` use a dedicated `prettier_json` formatter with `--trailing-comma none`, so jsonls validation has nothing to flag (`lua/plugins/formatting.lua:60`).
+- JSON never gains trailing commas: `json`, `jsonc`, and `json5` use a dedicated `prettier_json` formatter with `--trailing-comma none`, so jsonls validation has nothing to flag (`lua/plugins/formatting.lua:62`).
 - Inlay hints stay off globally to keep buffers clean; hover and signature help remain on demand (`lua/plugins/lsp.lua:50`).
 
 ### System theme and transparency

@@ -5,6 +5,9 @@
 -- Language extras (C/C++, Python, Rust, Tailwind, JSON, YAML, TOML, Docker, SQL, ESLint)
 -- add their own servers via lazyvim.json; the entries below cover what
 -- LazyVim has no extra for, plus Yoru overrides of extra-provided servers.
+
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+
 local function gtk_css_path(path)
     return path ~= nil and (path:find("/waybar/", 1, true) ~= nil or path:find("/swaync/", 1, true) ~= nil)
 end
@@ -107,6 +110,18 @@ return {
                 -- completion and definition; ShellCheck remains the manual
                 -- linter so its rules are never reported twice.
                 bashls = {},
+
+                -- PMK Markdown: [[wililinks]], backlinks, tags, daylynots.
+                -- Linux nvim defaults dynamciRegistration=false (lsp/protocol.lua:610);
+                -- markdown_oxide needs if for Create-Unresolved-File and unindexed completions.
+                markdown_oxide = {
+                    capabilities {
+                        workspace = {
+                            didChangeWhatchedFiles = { dynamicRegistration = true }
+                        }
+                    }
+                },
+
                 -- lang.python enables the Ruff LSP by default; Yoru keeps Pylint
                 -- as the single Python linter so diagnostics are not doubled.
                 ruff = { enabled = false },
