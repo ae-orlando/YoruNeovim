@@ -115,7 +115,7 @@ return {
                 -- Linux nvim defaults dynamciRegistration=false (lsp/protocol.lua:610);
                 -- markdown_oxide needs if for Create-Unresolved-File and unindexed completions.
                 markdown_oxide = {
-                    capabilities {
+                    capabilities = {
                         workspace = {
                             didChangeWhatchedFiles = { dynamicRegistration = true }
                         }
