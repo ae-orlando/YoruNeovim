@@ -51,6 +51,11 @@ return {
             -- Editor options alone do not configure external formatters globally.
             formatters = {
                 prettier = {
+                    -- Excalidraw drawings are JSON wrapped in Markdown; never
+                    -- let a manual Prettier run rewrite the drawing payload.
+                    condition = function(_, ctx)
+                        return not (ctx.filename or ""):match("%.excalidraw%.md$")
+                    end,
                     -- --tab-width 4  -> matches shiftwidth=4
                     -- --use-tabs false -> matches expandtab=true (spaces, not tabs)
                     -- CLI flags win over .prettierrc, so this is the "always" guarantee.

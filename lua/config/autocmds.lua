@@ -59,3 +59,64 @@ vim.api.nvim_create_autocmd("User", {
 -- autocmds load on VeryLazy, after the initial colorscheme; style now too
 pcall(style_cursorline_nr)
 pcall(style_comments)
+
+-- Notes command layer and <leader>m mappings.
+require("config.notes")
+require("config.markdown_theme")
+
+-- Markdown reading profile. These options are window-local (plus a few
+-- buffer-local ones), so they are applied on FileType and again on BufWinEnter.
+local markdown_group = vim.api.nvim_create_augroup("YoruMarkdown", { clear = true })
+
+local function apply_markdown_profile()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true
+    vim.opt_local.breakindent = true
+    vim.opt_local.breakindentopt = "shift:2"
+    vim.opt_local.showbreak = "↳ "
+    vim.opt_local.spell = true
+    vim.opt_local.spelllang = "en"
+    vim.opt_local.number = false
+    vim.opt_local.relativenumber = false
+    vim.opt_local.cursorline = false
+    vim.opt_local.list = false
+    vim.opt_local.textwidth = 0
+    vim.opt_local.signcolumn = "auto"
+    vim.opt_local.foldcolumn = "0"
+    vim.opt_local.foldmethod = "expr"
+    vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    vim.opt_local.formatoptions:remove("t")
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = markdown_group,
+    pattern = { "markdown", "quarto" },
+    callback = function()
+        apply_markdown_profile()
+        if vim.api.nvim_buf_get_name(0):match("%.excalidraw%.md$") then
+            vim.b.autoformat = false
+            local function disable()
+                pcall(vim.cmd, "RenderMarkdown buf_disable")
+            end
+            if package.loaded["render-markdown"] then
+                vim.schedule(disable)
+            else
+                pcall(function()
+                    LazyVim.on_load("render-markdown.nvim", function()
+                        vim.schedule(disable)
+                    end)
+                end)
+            end
+        end
+    end,
+})
+
+vim.api.nvim_create_autocmd({ "BufWinEnter", "WinEnter" }, {
+    group = markdown_group,
+    callback = function(args)
+        local filetype = vim.bo[args.buf].filetype
+        if filetype == "markdown" or filetype == "quarto" then
+            apply_markdown_profile()
+        end
+    end,
+})

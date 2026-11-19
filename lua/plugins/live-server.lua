@@ -13,8 +13,8 @@ return {
         })
     end,
     keys = {
-        { "<leader>mp", "<cmd>LivePreview start<CR>", desc = "Start Live Preview" },
-        { "<leader>mx", "<cmd>LivePreview close<CR>", desc = "Stop Live Preview" },
-        { "<leader>mf", "<cmd>LivePreview pick<CR>", desc = "Pick File to Preview" },
+        { "<leader>Pp", "<cmd>LivePreview start<CR>", desc = "Start Live Preview" },
+        { "<leader>Px", "<cmd>LivePreview close<CR>", desc = "Stop Live Preview" },
+        { "<leader>Pf", "<cmd>LivePreview pick<CR>", desc = "Pick File to Preview" },
     },
 }

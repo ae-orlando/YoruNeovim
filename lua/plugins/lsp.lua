@@ -111,15 +111,15 @@ return {
                 -- linter so its rules are never reported twice.
                 bashls = {},
 
-                -- PMK Markdown: [[wililinks]], backlinks, tags, daylynots.
-                -- Linux nvim defaults dynamciRegistration=false (lsp/protocol.lua:610);
-                -- markdown_oxide needs if for Create-Unresolved-File and unindexed completions.
+                -- PKM Markdown: [[wikilinks]], backlinks, tags, daily notes.
+                -- Linux nvim defaults dynamicRegistration=false (lsp/protocol.lua:610);
+                -- markdown_oxide needs it for Create-Unresolved-File and unindexed completions.
                 markdown_oxide = {
-                    capabilities = {
+                    capabilities = vim.tbl_deep_extend("force", capabilities, {
                         workspace = {
-                            didChangeWhatchedFiles = { dynamicRegistration = true }
-                        }
-                    }
+                            didChangeWatchedFiles = { dynamicRegistration = true },
+                        },
+                    }),
                 },
 
                 -- lang.python enables the Ruff LSP by default; Yoru keeps Pylint

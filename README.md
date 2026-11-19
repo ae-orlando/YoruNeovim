@@ -72,25 +72,48 @@ Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The l
 | `<leader>fp` | Format buffer or visual selection          | `lua/plugins/formatting.lua:114` |
 | `<leader>fl` | Lint the current file                      | `lua/plugins/formatting.lua:148` |
 | `<leader>pp` | Open the Snacks project picker             | `lua/plugins/project.lua:7`      |
+| `<leader>cs` | Aerial heading/symbol outline (replaces Trouble's `<leader>cs`) | LazyVim aerial extra |
 | `<leader>Ss` | Save the current project session           | `lua/plugins/session.lua:8`      |
 | `<leader>Sl` | Restore the current project/branch session | `lua/plugins/session.lua:15`     |
 | `<leader>Sd` | Stop automatic session saving for this run | `lua/plugins/session.lua:22`     |
-| `<leader>mp` | Start browser preview                      | `lua/plugins/live-server.lua:16` |
-| `<leader>mx` | Stop browser preview                       | `lua/plugins/live-server.lua:17` |
-| `<leader>mf` | Pick a file to preview                     | `lua/plugins/live-server.lua:18` |
+| `<leader>Pp` | Start browser preview                      | `lua/plugins/live-server.lua:16` |
+| `<leader>Px` | Stop browser preview                       | `lua/plugins/live-server.lua:17` |
+| `<leader>Pf` | Pick a file to preview                     | `lua/plugins/live-server.lua:18` |
 | `<leader>tr` | Run the nearest test                       | `lua/plugins/test.lua:26`        |
 | `<leader>tf` | Run tests in the current file              | `lua/plugins/test.lua:33`        |
 | `<leader>ta` | Run tests from the working directory       | `lua/plugins/test.lua:40`        |
 | `<leader>ts` | Toggle the test summary                    | `lua/plugins/test.lua:47`        |
 | `<leader>to` | Open test output                           | `lua/plugins/test.lua:54`        |
 
+### Notes mappings
+
+`<leader>m` is the notes group. The vault root is `$NOTES_VAULT` or `~/Documents/Notes`.
+
+| Keys | Action | Source |
+| --- | --- | --- |
+| `<leader>mn` | Capture a new note in `00-inbox` | `lua/config/notes.lua` |
+| `<leader>mj` | Open today's journal note | `lua/config/notes.lua` |
+| `<leader>mw` | Open this week's journal note | `lua/config/notes.lua` |
+| `<leader>mi` | Find an inbox note | `lua/config/notes.lua` |
+| `<leader>mf` | Find a vault note | `lua/config/notes.lua` |
+| `<leader>mg` | Search vault contents | `lua/config/notes.lua` |
+| `<leader>mb` | List backlinks | `lua/config/notes.lua` |
+| `<leader>mt` | Create a note by type | `lua/config/notes.lua` |
+| `<leader>mp` | Create/open a project note | `lua/config/notes.lua` |
+| `<leader>mo` | Open the current note in Obsidian | `lua/config/notes.lua` |
+| `<leader>mr` | Toggle rendered Markdown | `lua/config/notes.lua` |
+| `<leader>mv` | Run the vault check | `lua/config/notes.lua` |
+| `<leader>mz` | Toggle zen mode | `lua/plugins/zen.lua` |
+| `<leader>mT` | Capture a task | `lua/config/notes.lua` |
+| `<leader>mN` | Show `task next` | `lua/config/notes.lua` |
+
 TODO search (`<leader>st` / `<leader>sT`), TODO navigation, and Trouble mappings follow LazyVim and the selected picker. Telescope is not required.
 
 Persistence automatically saves session layout and open-file information on exit. Restoration is explicit; `<leader>Sl` restores the current project/branch, while LazyVim's `<leader>ql` restores the most recently saved session. Session files live under `stdpath("state")/sessions/` and do not replace recovery of unsaved edits.
 
-Browser preview supports HTML, Markdown, AsciiDoc, and SVG on `127.0.0.1:5500` (`lua/plugins/live-server.lua:3`).
+Browser preview supports HTML, Markdown, AsciiDoc, and SVG on `127.0.0.1:5500` (`lua/plugins/live-server.lua:3`). Preview keys use `<leader>P` so `<leader>m` stays reserved for notes.
 
-Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:15`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`; C/C++ debugging uses `codelldb` from the clangd extra (`lazyvim.json:4`); Rust debugging uses `codelldb` through rustaceanvim (`<leader>dr` lists debuggables, `<leader>cR` opens Rust code actions). `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:9`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
+Debugging mappings come from LazyVim's `dap.core` and `test.core` extras (`lazyvim.json:3`, `lazyvim.json:16`): `<leader>db` toggle breakpoint, `<leader>dc` continue, `<leader>di` / `<leader>do` step in/out, `<leader>du` debugger UI, and `<leader>td` debug the nearest test. Node/browser debugging is wired through the TypeScript extra; Python debugging uses `debugpy`; C/C++ debugging uses `codelldb` from the clangd extra (`lazyvim.json:5`); Rust debugging uses `codelldb` through rustaceanvim (`<leader>dr` lists debuggables, `<leader>cR` opens Rust code actions). `<leader>D` toggles the Dadbod database UI from the SQL extra (`lazyvim.json:10`); connections are configured per project through `vim.g.dbs` and are never stored in this repository.
 
 ### Language tooling
 
