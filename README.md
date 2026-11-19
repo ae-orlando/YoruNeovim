@@ -73,3 +73,23 @@ YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
 ```
 
 GitHub Actions runs the formatting, unit, and integration checks on every push and pull request (`.github/workflows/ci.yml`).
+
+## Screenshots
+
+Yoru is designed to work with your desktop environment. The screenshots below show the editor with the desktop wallpaper visible through Kitty, and the various palette themes.
+
+| Mint dashboard | Pink dashboard |
+|:---:|:---:|
+| ![Yoru editor with a mint wallpaper-derived accent](assets/dashboard-mint.png) | ![Yoru editor with a pink wallpaper-derived accent](assets/pink-dashboard.png) |
+
+| Peach editor | Purple editor and buffer tabs |
+|:---:|:---:|
+| ![Yoru editor with a peach palette](assets/editor-peech.png) | ![Yoru editor with purple buffer tabs and a transparent background](assets/editor-purple-tabs.png) |
+
+<center>Mint</center>
+
+<center>Pink</center>
+
+<center>Peach</center>
+
+<center>Purple</center>
