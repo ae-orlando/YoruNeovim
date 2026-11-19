@@ -41,8 +41,8 @@ return {
                 enabled = true,
                 file_types = { "markdown", "quarto" },
                 heading = {
-                    sign = false,
-                    icons = {},
+                    sign = true,
+                    icons = { "󰲡 ", "󰲣 ", "󰲥 ", "󰲧 ", "󰲩 ", "󰲫 " },
                     backgrounds = {},
                     border = false,
                 },

@@ -25,8 +25,8 @@ function M.apply()
     set("RenderMarkdownH5", { fg = pal.orange })
     set("RenderMarkdownH6", { fg = pal.muted })
 
-    -- Keep the underlying treesitter captures in step even when heading icons
-    -- are disabled, so the heading text itself stays colored.
+    -- Keep the underlying treesitter captures in step so heading text and icons
+    -- share the same Matugen colors.
     for level, fg in ipairs({ pal.accent, pal.blue, pal.teal, pal.yellow, pal.orange, pal.muted }) do
         set("@markup.heading." .. level .. ".markdown", { fg = fg, bold = level <= 2 })
         set("@markup.heading." .. level, { fg = fg, bold = level <= 2 })

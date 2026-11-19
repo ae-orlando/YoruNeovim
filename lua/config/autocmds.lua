@@ -65,7 +65,8 @@ require("config.notes")
 require("config.markdown_theme")
 
 -- Markdown reading profile. These options are window-local (plus a few
--- buffer-local ones), so they are applied on FileType and again on BufWinEnter.
+-- buffer-local ones), so they are applied on FileType and again on BufWinEnter
+-- and WinEnter.
 local markdown_group = vim.api.nvim_create_augroup("YoruMarkdown", { clear = true })
 
 local function apply_markdown_profile()
@@ -76,8 +77,9 @@ local function apply_markdown_profile()
     vim.opt_local.showbreak = "↳ "
     vim.opt_local.spell = true
     vim.opt_local.spelllang = "en"
-    vim.opt_local.number = false
-    vim.opt_local.relativenumber = false
+    -- Markdown follows the editor-wide numbering, including relative numbers.
+    vim.opt_local.number = vim.go.number
+    vim.opt_local.relativenumber = vim.go.relativenumber
     vim.opt_local.cursorline = false
     vim.opt_local.list = false
     vim.opt_local.textwidth = 0
