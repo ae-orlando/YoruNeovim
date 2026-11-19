@@ -80,7 +80,8 @@ local function apply_markdown_profile()
     -- Markdown follows the editor-wide numbering, including relative numbers.
     vim.opt_local.number = vim.go.number
     vim.opt_local.relativenumber = vim.go.relativenumber
-    vim.opt_local.cursorline = false
+    vim.opt_local.cursorline = vim.go.cursorline
+    vim.opt_local.cursorlineopt = vim.go.cursorlineopt
     vim.opt_local.list = false
     vim.opt_local.textwidth = 0
     vim.opt_local.signcolumn = "auto"

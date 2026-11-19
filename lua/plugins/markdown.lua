@@ -41,9 +41,17 @@ return {
                 enabled = true,
                 file_types = { "markdown", "quarto" },
                 heading = {
-                    sign = true,
+                    sign = false,
                     icons = { "󰲡 ", "󰲣 ", "󰲥 ", "󰲧 ", "󰲩 ", "󰲫 " },
-                    backgrounds = {},
+                    backgrounds = {
+                        "RenderMarkdownH1Bg",
+                        "RenderMarkdownH2Bg",
+                        "RenderMarkdownH3Bg",
+                        "RenderMarkdownH4Bg",
+                        "RenderMarkdownH5Bg",
+                        "RenderMarkdownH6Bg",
+                    },
+                    width = "full",
                     border = false,
                 },
                 bullet = { enabled = true },
@@ -56,7 +64,7 @@ return {
                 link = { enabled = true },
                 pipe_table = { enabled = true, cell = "padded", preset = "none" },
                 quote = { enabled = true },
-                anti_conceal = { enabled = true },
+                anti_conceal = { enabled = true, ignore = { head_background = true } },
             })
         end,
     },

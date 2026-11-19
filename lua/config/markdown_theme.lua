@@ -7,7 +7,27 @@ local function set(name, spec)
     vim.api.nvim_set_hl(0, name, spec)
 end
 
+local function rgb(hex)
+    hex = hex:gsub("^#", "")
+    return tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
+end
+
+local function blend(fg, bg, alpha)
+    local fr, fg_g, fb = rgb(fg)
+    local br, bg_g, bb = rgb(bg)
+    local function mix(a, b)
+        return math.floor(a * alpha + b * (1 - alpha) + 0.5)
+    end
+    return string.format("#%02x%02x%02x", mix(fr, br), mix(fg_g, bg_g), mix(fb, bb))
+end
+
 function M.apply()
+    -- Keep the Catppuccin fallback quiet; render-markdown's own defaults are
+    -- DiffText, DiffAdd, DiffChange and DiffDelete.
+    for level = 1, 6 do
+        set("RenderMarkdownH" .. level .. "Bg", { bg = "NONE" })
+    end
+
     local ok, matugen = pcall(require, "matugen")
     if not ok or vim.g.colors_name ~= "matugen" then
         return
@@ -16,6 +36,20 @@ function M.apply()
     local pal = matugen.get_palette()
     if not pal then
         return
+    end
+
+    local bands = {
+        { pal.accent, 0.18 },
+        { pal.blue, 0.16 },
+        { pal.teal, 0.14 },
+        { pal.yellow, 0.12 },
+        { pal.orange, 0.10 },
+        { pal.muted, 0.08 },
+    }
+    for level, band in ipairs(bands) do
+        if band[1] and pal.bg then
+            set("RenderMarkdownH" .. level .. "Bg", { bg = blend(band[1], pal.bg, band[2]) })
+        end
     end
 
     set("RenderMarkdownH1", { fg = pal.accent, bold = true })
