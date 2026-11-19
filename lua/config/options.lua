@@ -6,6 +6,13 @@ local opt = vim.opt
 -- it for a session if wanted.
 vim.g.autoformat = false
 
+-- Kitty exports KITTY_WINDOW_ID even when $TERM is xterm-256color. Snacks image
+-- otherwise falls back to a floating preview because TermResponse detection
+-- can time out. Force detection only on machines that really are inside Kitty.
+if vim.env.KITTY_WINDOW_ID and vim.env.SNACKS_KITTY == nil then
+    vim.env.SNACKS_KITTY = "true"
+end
+
 vim.opt.wrap = false
 
 -- ============================================
