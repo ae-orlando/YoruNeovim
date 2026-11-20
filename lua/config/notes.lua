@@ -94,9 +94,51 @@ local function new_concept()
     end)
 end
 
+local function new_exercise()
+    local available = tracks()
+    if #available == 0 then
+        notify("No tracks found under 02-notes/", vim.log.levels.WARN)
+        return
+    end
+
+    vim.ui.select(available, { prompt = "Exercise track" }, function(track)
+        if not track then
+            return
+        end
+        vim.ui.input({ prompt = "Concept: " }, function(concept)
+            if concept and vim.trim(concept) ~= "" then
+                create({ "exercise", "--track", track, "--concept", vim.trim(concept) })
+            end
+        end)
+    end)
+end
+
+local function new_solution()
+    local available = tracks()
+    if #available == 0 then
+        notify("No tracks found under 02-notes/", vim.log.levels.WARN)
+        return
+    end
+
+    vim.ui.select(available, { prompt = "Solution track" }, function(track)
+        if not track then
+            return
+        end
+        vim.ui.input({ prompt = "Problem slug: " }, function(problem)
+            if problem and vim.trim(problem) ~= "" then
+                create({ "solution", "--track", track, "--problem", vim.trim(problem) })
+            end
+        end)
+    end)
+end
+
 local function new_note(kind)
     if kind == "concept" then
         new_concept()
+    elseif kind == "exercise" then
+        new_exercise()
+    elseif kind == "solution" then
+        new_solution()
     elseif kind == "project" then
         ask_title("Project title: ", function(title)
             create({ "project", title })
@@ -110,7 +152,7 @@ local function new_note(kind)
     end
 end
 
-local types = { "concept", "project", "evidence", "review" }
+local types = { "concept", "exercise", "solution", "project", "evidence", "review" }
 
 local function project_note(path)
     local repo = path and vim.trim(path) or ""
@@ -141,14 +183,37 @@ local function open_in_obsidian()
     vim.ui.open(uri)
 end
 
+
+
 local function terminal(cmd)
     local ok = pcall(function()
-        Snacks.terminal.open(cmd, { win = { position = "bottom" } })
+        Snacks.terminal.open(cmd, {
+            auto_close = false,
+            win = {
+                position = "bottom",
+                wo = {
+                    winhighlight = "Normal:Normal,NormalNC:Normal",
+                },
+            },
+        })
     end)
+
     if not ok then
-        vim.cmd("terminal " .. table.concat(vim.tbl_map(vim.fn.shellescape, cmd), " "))
+        vim.cmd("terminal " .. table.concat(
+            vim.tbl_map(vim.fn.shellescape, cmd),
+            " "
+        ))
     end
 end
+
+-- local function terminal(cmd)
+--     local ok = pcall(function()
+--         Snacks.terminal.open(cmd, { win = { position = "bottom" } })
+--     end)
+--     if not ok then
+--         vim.cmd("terminal " .. table.concat(vim.tbl_map(vim.fn.shellescape, cmd), " "))
+--     end
+-- end
 
 local function vcheck()
     terminal({ "python3", root .. "/90-tools/check-vault.py" })
