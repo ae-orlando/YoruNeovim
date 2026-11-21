@@ -65,10 +65,31 @@ return {
         opts = function(_, opts)
             opts.image = vim.tbl_deep_extend("force", opts.image or {}, {
                 enabled = true,
-                doc = { enabled = true, inline = true, max_width = 80, max_height = 40 },
+                doc = {
+                    enabled = true,
+                    inline = false,
+                    float = true,
+                    max_width = 80,
+                    max_height = 40,
+                    wo = {
+                        -- Image floats are non-focusable, so NormalNC matters.
+                        -- Mapping to Normal uses the live editor background and
+                        -- follows colorscheme.
+                        winhighlight = "Normal:Normal,NormalNC:Normal",
+                    },
+                },
                 img_dirs = { "attachments", "Excalidraw" },
                 resolve = resolve_image,
             })
+
+            styles = {
+                snacks_image = {
+                    border = true,
+                    wo = {
+                        winhighlight = "Normal:Normal,NormalNC:Normal",
+                    }
+                }
+            }
             return opts
         end,
     },
