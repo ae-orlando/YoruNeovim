@@ -1,8 +1,48 @@
 # Yoru Neovim
 
-This is here so you have a Neovim configuration for TypeScript, Rust, and writing, managed with `lazy.nvim`. It keeps the native bottom command line and follows the desktop palette through Matugen, with transparent editor backgrounds.
+> [!WARNING]
+> This is not a neovim distro It is basically just a themed opinionated config on top of `LazyVim`.
+> In fact it is just a neovim configuration tweaked to suit my workflow, language tooling and most importantly **eye candy**
+> So if you are just looking for a neovim distro that works and don't want "bloat". Hit the road, dude.
+> If you do decide to try `Yoru Neovim`, though. You're gonna love it.
 
 If you just want to read the guide, see the [LazyVim docs](https://www.lazyvim.org/).
+
+## Why Yoru Neovim and not LazyVim
+
+To be honest, I don't really see the reason why anyone else would want to use this config when they can just install the [LazyVim](https://github.com/LazyVim/LazyVim) and have fun setting up the configuration that you like.
+However, These are some of the reasons I like it so much:
+
+1. Tinkering is fun
+
+### Dynamic Theming
+
+**`Yoru Neovim`** Folows your system theme. _Sweet, right??_.
+
+> [!IMPORTANT]
+> The dynamic theming gets its colors from a file genrated by matugen in my desktop environment [HyprYoru](http://github.com/ae-orlando/HyprYoru). _Go check it out and leave a star its beautiful_.
+> If you don't use `HyprYoru` and you're on hyprland. I've put the guide to getting dynamic theming below. <!-- TODO: link -->
+> If you are not on `Hyprland` the theme will fallback to **`Cattppucin Mocaha`**
+> Feel free to set your desired theme. _Though I don't see why you'd want to apply this config if you are going to set a static theme, to be honest. But suite yourself_
+
+### Core Features
+
+| Feature                    | Keys                                          | Description                                                                                        | Advantage                                                                       |
+| :------------------------- | :-------------------------------------------- | :------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| **Notes**                  | `<leader>m` group                             | Capture, journal, concept, evidence, and review notes with auto‑dated markdown templates.          | Quick capture → organized review; templates enforce structure without thinking. |
+| **In‑box / Find / Grep**   | `<leader>mi`, `<leader>mf`, `<leader>mg`      | Snacks picker navigation of `00‑inbox`, the vault, or vault‑wide grep.                             | Locate any note in under two seconds.                                           |
+| **Obsidian integration**   | `<leader>mo`                                  | Opens the current note via `obsidian://open`.                                                      | Seamless switch between Neovim and Obsidian vault.                              |
+| **Task capture**           | `<leader>mT`                                  | Prompts for a task and creates it in taskwarrior.                                                  | Capture ideas from Neovim directly into your task system.                       |
+| **Backlinks**              | `<leader>mb`                                  | Attempts LSP‑based reference lookup.                                                               | See where a note is referenced without leaving the buffer.                      |
+| **Which‑key help**         | `<leader>m`                                   | Pops a Which‑key menu of note commands.                                                            | Discover note commands without memorising keys.                                 |
+| **Terminal / Taskwarrior** | `<leader>mN`                                  | Bottom‑terminal toggles for `task next` or custom commands.                                        | Run task management without leaving Neovim.                                     |
+| **LSP / Language tooling** | —                                             | Pre‑configured LSPs for JavaScript/TypeScript, Python, Rust, and more; inlay hints off by default. | Sensible defaults; keep buffers clean, enable help on demand.                   |
+| **Formatting / Lint**      | `<leader>fp` format, `<leader>fl` manual lint | Auto‑format off; explicit command for formatting and linting.                                      | No surprise rewrites; explicit control when you need it.                        |
+| **Session management**     | `<leader>Sl`                                  | Saves/restores project sessions.                                                                   | Re‑open exactly where you left off after a break.                               |
+| **Matugen palette**        | —                                             | Wallpaper‑adaptive colors via `matugen.nvim`; fallback to Catppuccin Mocha.                        | Your wallpaper drives the editor theme, or a reliable default out of the box.   |
+| **Markdown reading**       | `zc` / `zo` / `zM` / `zR`                     | Heading bands and fold-on-demand text; folds stay open by default (`foldlevel=99`).                | Readable heading hierarchy; collapsed sections stay identifiable.               |
+| **Exercise / solution**    | `<leader>me`, `<leader>ms`                    | Create exercise and solution notes with track and concept prompts.                                 | Structured practice workflow.                                                   |
+| **Doc images**             | —                                             | Renders Markdown and Obsidian image embeds in floats with the editor background.                   | Images stay readable without leaving the buffer.                                |
 
 ## Prerequisites
 
@@ -22,7 +62,7 @@ Optional: Matugen writing `~/.config/matugen/themes/nvim-colors.json`, Kitty and
 ### Try without replacing your existing setup
 
 ```bash
-git clone https://github.com/ae-orlando/YoruNeovim.git "${XDG_CONFIG_HOME:-$HOME/.config}/yoru"
+git clone https://github.com/ae-orlando/YoruNeovim.git "${XDG_CONFIG_HOME:-$HOME/.config}/yoru-nvim"
 NVIM_APPNAME=yoru nvim
 ```
 
@@ -43,47 +83,16 @@ On first run, `lua/config/lazy.lua` bootstraps `lazy.nvim`. Allow plugin and too
 
 Start with `NVIM_APPNAME=yoru nvim`, or `nvim` for a default installation. The leader key is **Space**.
 
-### Core features
-
-- **Notes** (`<leader>m` group): capture, journal, concept, evidence, and review notes with auto‑dated markdown templates. *Advantage*: quick capture → organized review; templates enforce structure without thinking.
-- **In‑box / Find / Grep** (`<leader>mi`, `<leader>mf`, `<leader>mg`): Snacks picker navigation of `00‑inbox`, the vault, or vault‑wide grep. *Advantage*: locate any note in under two seconds.
-- **Obsidian integration** (`<leader>mo`): opens the current note via `obsidian://open`. *Advantage*: seamless switch between Neovim and Obsidian vault.
-- **Task capture** (`<leader>mT`): prompts for a task and creates it in taskwarrior. *Advantage*: capture ideas from Neovim directly into your task system.
-- **Backlinks** (`<leader>mb`): attempts LSP‑based reference lookup. *Advantage*: see where a note is referenced without leaving the buffer.
-- **Which‑key help** (`<leader>m`): pops a Which‑key menu of note commands. *Advantage*: discover note commands without memorising keys.
-- **Terminal / Taskwarrior** (`<leader>mN`): bottom‑terminal toggles for `task next` or custom commands. *Advantage*: run task management without leaving Neovim.
-- **LSP / Language tooling**: pre‑configured LSPs for JavaScript/TypeScript, Python, Rust, and more; inlay hints off by default. *Advantage*: sensible defaults; keep buffers clean, enable help on demand.
-- **Formatting / Lint** (`<leader>fp` format, `<leader>fl` manual lint; auto‑format off). *Advantage*: no surprise rewrites; explicit control when you need it.
-- **Session management** (`<leader>Sl`): saves/restores project sessions. *Advantage*: re‑open exactly where you left off after a break.
-- **Matugen palette**: wallpaper‑adaptive colors via `matugen.nvim`; fallback to Catppuccin Mocha. *Advantage*: your wallpaper drives the editor theme, or a reliable default out of the box.
-
-## Checks
-
-Run the dependency‑free regression checks from the repository root:
-
-```bash
-nvim --headless -u NONE -i NONE -n -l tests/run.lua
-```
-
-To also exercise the real plugins, point `YORU_TEST_PLUGIN_DIR` at an existing installation whose commits match `lazy-lock.json`:
-
-```bash
-YORU_TEST_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/yoru/lazy" \
-    nvim --headless -u NONE -i NONE -n -l tests/run.lua
-```
-
-GitHub Actions runs the formatting, unit, and integration checks on every push and pull request (`.github/workflows/ci.yml`).
-
 ## Screenshots
 
 Yoru is designed to work with your desktop environment. The screenshots below show the editor with the desktop wallpaper visible through Kitty, and the various palette themes.
 
-| Mint dashboard | Pink dashboard |
-|:---:|:---:|
+|                                 Mint dashboard                                 |                                 Pink dashboard                                 |
+| :----------------------------------------------------------------------------: | :----------------------------------------------------------------------------: |
 | ![Yoru editor with a mint wallpaper-derived accent](assets/dashboard-mint.png) | ![Yoru editor with a pink wallpaper-derived accent](assets/pink-dashboard.png) |
 
-| Peach editor | Purple editor and buffer tabs |
-|:---:|:---:|
+|                         Peach editor                         |                                   Purple editor and buffer tabs                                    |
+| :----------------------------------------------------------: | :------------------------------------------------------------------------------------------------: |
 | ![Yoru editor with a peach palette](assets/editor-peech.png) | ![Yoru editor with purple buffer tabs and a transparent background](assets/editor-purple-tabs.png) |
 
 <center>Mint</center>

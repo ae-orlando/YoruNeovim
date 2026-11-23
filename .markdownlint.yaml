@@ -2,3 +2,5 @@
 # markdownlint README.md --disable MD013
 # Long table rows, prose lines, and reference links stay unwrapped.
 MD013: false
+# Inline HTML is used for centered screenshot captions.
+MD033: false
