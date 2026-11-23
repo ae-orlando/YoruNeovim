@@ -183,8 +183,6 @@ local function open_in_obsidian()
     vim.ui.open(uri)
 end
 
-
-
 local function terminal(cmd)
     local ok = pcall(function()
         Snacks.terminal.open(cmd, {
@@ -199,10 +197,7 @@ local function terminal(cmd)
     end)
 
     if not ok then
-        vim.cmd("terminal " .. table.concat(
-            vim.tbl_map(vim.fn.shellescape, cmd),
-            " "
-        ))
+        vim.cmd("terminal " .. table.concat(vim.tbl_map(vim.fn.shellescape, cmd), " "))
     end
 end
 

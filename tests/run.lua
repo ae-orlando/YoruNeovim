@@ -461,6 +461,122 @@ test("cursor-line number retains its original tint independently of syntax", fun
     eq(0xfedcba, vim.api.nvim_get_hl(0, { name = "CursorLineNr" }).fg)
 end)
 
+test("markdown heading bands are wired with a full-width window", function()
+    local captured
+    replace(package.loaded, "render-markdown", {
+        setup = function(opts)
+            captured = opts
+        end,
+    })
+    specs("markdown")[1].config()
+    eq({
+        "RenderMarkdownH1Bg",
+        "RenderMarkdownH2Bg",
+        "RenderMarkdownH3Bg",
+        "RenderMarkdownH4Bg",
+        "RenderMarkdownH5Bg",
+        "RenderMarkdownH6Bg",
+    }, captured.heading.backgrounds)
+    eq("full", captured.heading.width)
+    eq(false, captured.heading.sign)
+    eq(true, captured.anti_conceal.enabled)
+    eq(true, captured.anti_conceal.ignore.head_background)
+    -- Closed folds and open headings must show the same glyphs.
+    eq(require("config.folds").heading_icons, captured.heading.icons)
+end)
+
+test("heading bands share one lightness step and follow the palette direction", function()
+    local state = mock_matugen()
+    state.palette.blue = "#2244aa"
+    state.palette.teal = "#228877"
+    state.palette.yellow = "#ccaa22"
+    state.palette.orange = "#cc7722"
+    local inputs = {
+        [state.palette.bg] = { L = 0.18, C = 0.01, h = 250 },
+        [state.palette.accent] = { L = 0.78, C = 0.03, h = 245 },
+        [state.palette.blue] = { L = 0.45, C = 0.11, h = 265 },
+        [state.palette.teal] = { L = 0.7, C = 0.09, h = 180 },
+        [state.palette.yellow] = { L = 0.85, C = 0.13, h = 95 },
+        [state.palette.orange] = { L = 0.75, C = 0.14, h = 55 },
+        [state.palette.muted] = { L = 0.65, C = 0, h = 0 },
+        ["#eeeeee"] = { L = 0.92, C = 0.01, h = 250 },
+    }
+    local chroma = { 1.0, 0.92, 0.84, 0.76, 0.68, 0.7 }
+    state.last = {}
+    package.loaded.matugen.color = function()
+        return {
+            hex_to_oklch = function(hex)
+                assert(inputs[hex], "unexpected color " .. tostring(hex))
+                return inputs[hex]
+            end,
+            oklch = function(L, C, h)
+                state.last[#state.last + 1] =
+                    { L = L, C = C, h = h, hex = string.format("#%06x", 0x100000 + #state.last) }
+                return state.last[#state.last].hex
+            end,
+        }
+    end
+    replace(vim.g, "colors_name", "matugen")
+    local theme = require("config.markdown_theme")
+    local sources = {
+        state.palette.accent,
+        state.palette.blue,
+        state.palette.teal,
+        state.palette.yellow,
+        state.palette.orange,
+        state.palette.muted,
+    }
+    theme.apply()
+    eq(6, #state.last)
+    for level, request in ipairs(state.last) do
+        local source = inputs[sources[level]]
+        assert(math.abs(request.L - 0.24) < 1e-9, "band level " .. level .. " must sit one step above the background")
+        assert(math.abs(request.C - source.C * chroma[level]) < 1e-9, "band level " .. level .. " chroma taper")
+        eq(source.h, request.h)
+        eq(
+            tonumber(request.hex:sub(2), 16),
+            vim.api.nvim_get_hl(0, { name = "RenderMarkdownH" .. level .. "Bg", link = false }).bg
+        )
+    end
+
+    -- A light palette must sink the bands instead of lifting them.
+    state.palette.bg = "#eeeeee"
+    state.last = {}
+    theme.apply()
+    eq(6, #state.last)
+    assert(math.abs(state.last[1].L - 0.86) < 1e-9, "light palettes darken the bands")
+
+    vim.api.nvim_set_hl(0, "RenderMarkdownH1Bg", { bg = "#123456" })
+    replace(vim.g, "colors_name", "catppuccin")
+    theme.apply()
+    eq(nil, vim.api.nvim_get_hl(0, { name = "RenderMarkdownH1Bg", link = false }).bg)
+end)
+
+test("closed folds show the heading icon, title, and hidden line count", function()
+    local buf = vim.api.nvim_get_current_buf()
+    local previous = { foldmethod = vim.wo.foldmethod, foldtext = vim.wo.foldtext }
+    cleanups[#cleanups + 1] = function()
+        vim.wo.foldmethod = previous.foldmethod
+        vim.wo.foldtext = previous.foldtext
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+
+    dofile(root .. "/lua/config/autocmds.lua")
+    vim.cmd("enew")
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, { "# Title", "", "body", "more", "## Sub", "tail" })
+    vim.bo.filetype = "markdown"
+    eq("v:lua.require('config.folds').text()", vim.wo.foldtext)
+
+    local folds = require("config.folds")
+    eq("󰲡 Title ─ 4 lines", folds.render(1, 4))
+    eq("󰲣 Sub ─ 2 lines", folds.render(5, 6))
+    eq("body ─ 1 line", folds.render(3, 3))
+
+    vim.wo.foldmethod = "manual"
+    vim.cmd("1,4fold")
+    eq("󰲡 Title ─ 4 lines", vim.fn.foldtextresult(1))
+end)
+
 test("TODO settings inherit picker mappings rather than requiring Telescope", function()
     local entry = specs("todo")[1]
     for _, key in ipairs(entry.keys or {}) do

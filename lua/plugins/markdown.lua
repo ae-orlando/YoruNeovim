@@ -42,8 +42,18 @@ return {
                 file_types = { "markdown", "quarto" },
                 heading = {
                     sign = false,
-                    icons = { "󰲡 ", "󰲣 ", "󰲥 ", "󰲧 ", "󰲩 ", "󰲫 " },
-                    backgrounds = {},
+                    -- Shared with config/folds.lua so closed folds show the
+                    -- same glyphs as open headings.
+                    icons = require("config.folds").heading_icons,
+                    backgrounds = {
+                        "RenderMarkdownH1Bg",
+                        "RenderMarkdownH2Bg",
+                        "RenderMarkdownH3Bg",
+                        "RenderMarkdownH4Bg",
+                        "RenderMarkdownH5Bg",
+                        "RenderMarkdownH6Bg",
+                    },
+                    width = "full",
                     border = false,
                 },
                 bullet = { enabled = true },
@@ -56,7 +66,12 @@ return {
                 link = { enabled = true },
                 pipe_table = { enabled = true, cell = "padded", preset = "none" },
                 quote = { enabled = true },
-                anti_conceal = { enabled = true },
+                anti_conceal = {
+                    enabled = true,
+                    -- Keep the heading band on the cursor line instead of
+                    -- letting anti-conceal punch a hole through it.
+                    ignore = { head_background = true },
+                },
             })
         end,
     },
@@ -87,8 +102,8 @@ return {
                     border = true,
                     wo = {
                         winhighlight = "Normal:Normal,NormalNC:Normal",
-                    }
-                }
+                    },
+                },
             }
             return opts
         end,

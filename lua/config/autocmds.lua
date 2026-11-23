@@ -88,6 +88,8 @@ local function apply_markdown_profile()
     vim.opt_local.foldcolumn = "0"
     vim.opt_local.foldmethod = "expr"
     vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    -- Closed folds render icon + title + count (config/folds.lua).
+    vim.opt_local.foldtext = "v:lua.require('config.folds').text()"
     vim.opt_local.formatoptions:remove("t")
 end
 

@@ -8,6 +8,12 @@ local function set(name, spec)
 end
 
 function M.apply()
+    -- render-markdown links these to Diff/Visual groups by default; clear
+    -- them so the Catppuccin fallback keeps quiet bands (no background).
+    for level = 1, 6 do
+        set("RenderMarkdownH" .. level .. "Bg", { bg = "NONE" })
+    end
+
     local ok, matugen = pcall(require, "matugen")
     if not ok or vim.g.colors_name ~= "matugen" then
         return
@@ -24,6 +30,29 @@ function M.apply()
     set("RenderMarkdownH4", { fg = pal.yellow })
     set("RenderMarkdownH5", { fg = pal.orange })
     set("RenderMarkdownH6", { fg = pal.muted })
+
+    -- Heading bands: same lightness offset from the background for every
+    -- level (equal perceived strength), heading hue/chroma preserved via
+    -- OKLCH, chroma tapered gently H1 -> H6. Dark palettes lift, light
+    -- palettes sink. Never throw during ColorScheme.
+    pcall(function()
+        if not pal.bg then
+            return
+        end
+        local color = matugen.color()
+        local bg = color.hex_to_oklch(pal.bg)
+        local dir = bg.L < 0.5 and 1 or -1
+        local step = 0.06
+        local chroma = { 1.0, 0.92, 0.84, 0.76, 0.68, 0.7 }
+        for level, hex in ipairs({ pal.accent, pal.blue, pal.teal, pal.yellow, pal.orange, pal.muted }) do
+            if hex then
+                local lch = color.hex_to_oklch(hex)
+                set("RenderMarkdownH" .. level .. "Bg", {
+                    bg = color.oklch(bg.L + dir * step, lch.C * chroma[level], lch.h),
+                })
+            end
+        end
+    end)
 
     -- Keep the underlying treesitter captures in step so heading text and icons
     -- share the same Matugen colors.
